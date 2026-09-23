@@ -11,6 +11,7 @@ import Layout from "./components/Layout";
 
 // Authentication
 import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 
 // Dashboard
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -49,6 +50,11 @@ function App() {
         <Route
           path="/login"
           element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
         />
 
         {/* =====================================================

@@ -1,1 +1,61 @@
 @import "tailwindcss";
+
+/* ============================================================
+   TAILWIND v4 — CLASS-BASED DARK MODE
+   ============================================================ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   MEDIA ELEMENTS RESET
+   ============================================================ */
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+    vertical-align: middle;
+    display: block;
+}
+
+
+/* ============================================================
+   SIDEBAR SCROLLBAR HIDER
+   ============================================================ */
+
+.sidebar-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+
+/* ============================================================
+   GLOBAL THEME TRANSITIONS
+   ============================================================ */
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark {
+    color-scheme: dark;
+}
+
+html:not(.dark) {
+    color-scheme: light;
+}

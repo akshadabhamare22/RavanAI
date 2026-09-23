@@ -1,12 +1,9 @@
 import React, { useState } from "react";
-import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, Info } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const DEMO_EMAIL = "demo@agni.ai";
-const DEMO_PASSWORD = "Agni@123";
-
-const Login = () => {
+const Register = () => {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -14,8 +11,14 @@ const Login = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const [formData, setFormData] = useState({
+    organizationName: "",
+    firstName: "",
+    lastName: "",
     email: "",
+    countryCode: "US +1",
+    phoneNumber: "",
     password: "",
+    referral: "",
   });
 
   const handleChange = (e) => {
@@ -26,16 +29,7 @@ const Login = () => {
     setError("");
   };
 
-  const handleDemoLogin = () => {
-    setFormData({
-      email: DEMO_EMAIL,
-      password: DEMO_PASSWORD,
-    });
-    setError("");
-  };
-
-  // ✅ Google OAuth Handler
-  const handleGoogleLogin = () => {
+  const handleGoogleSignup = () => {
     setIsGoogleLoading(true);
     setError("");
 
@@ -56,28 +50,29 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    if (
-      formData.email.trim().toLowerCase() === DEMO_EMAIL &&
-      formData.password === DEMO_PASSWORD
-    ) {
-      localStorage.setItem(
-        "ravanai_auth",
-        JSON.stringify({
-          isAuthenticated: true,
-          email: DEMO_EMAIL,
-        })
-      );
-      navigate("/dashboard", { replace: true });
-    } else {
-      setError("Invalid email or password. Please use the demo credentials.");
-    }
+    if (!formData.organizationName.trim()) return setError("Organization name is required.");
+    if (!formData.firstName.trim() || !formData.lastName.trim()) return setError("First and last name are required.");
+    if (!formData.email.trim()) return setError("Email is required.");
+    if (!formData.phoneNumber.trim()) return setError("Phone number is required.");
+    if (formData.password.length < 8) return setError("Password must be at least 8 characters.");
+
+    localStorage.setItem(
+      "ravanai_auth",
+      JSON.stringify({
+        isAuthenticated: true,
+        email: formData.email,
+        organization: formData.organizationName,
+      })
+    );
+
+    navigate("/dashboard", { replace: true });
   };
 
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.06, delayChildren: 0.12 },
+      transition: { staggerChildren: 0.05, delayChildren: 0.1 },
     },
   };
 
@@ -96,7 +91,7 @@ const Login = () => {
     visible: { opacity: 1, x: 0, transition: { duration: 0.8, ease: "easeOut" } },
   };
 
-  // Match Register page compact styles
+  // Compact input styling
   const inputClass =
     "h-[38px] w-full rounded-md border border-[#29292d] bg-[#101012] px-3 text-[13px] text-gray-100 outline-none placeholder:text-gray-500 transition focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400";
 
@@ -123,6 +118,7 @@ const Login = () => {
           <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(#ffffff_0.7px,transparent_0.7px)] [background-size:4px_4px]" />
 
           <div className="relative z-10 flex w-full flex-col">
+            {/* Logo */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -139,6 +135,7 @@ const Login = () => {
               <span className="text-2xl font-bold tracking-tight">Agni</span>
             </motion.div>
 
+            {/* Content */}
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -149,30 +146,28 @@ const Login = () => {
                 variants={itemVariants}
                 className="mb-6 text-[15px] font-semibold uppercase tracking-wide text-cyan-400"
               >
-                Voice AI Infrastructure
+                Join the revolution
               </motion.p>
 
               <motion.h1
                 variants={itemVariants}
                 className="text-4xl font-bold leading-[1.06] tracking-[-1.5px] text-gray-100 xl:text-[50px]"
               >
-                Build intelligent voice
+                Start building the future
                 <br />
-                agents that drive
-                <br />
-                business growth
+                of voice AI today
               </motion.h1>
 
               <motion.p
                 variants={itemVariants}
-                className="mt-7 max-w-[580px] text-[17px] leading-8 text-gray-400"
+                className="mt-7 max-w-[560px] text-[17px] leading-8 text-gray-400"
               >
-                Enterprise-grade platform for deploying human-like voice AI.
-                <br />
-                100+ languages. Every accent. Unlimited scale.
+                Create your organization, invite your team, and deploy intelligent
+                voice agents in minutes.
               </motion.p>
             </motion.div>
 
+            {/* Statistics */}
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -180,9 +175,9 @@ const Login = () => {
               className="mt-auto flex gap-14 pt-10"
             >
               {[
-                { value: "2.5M+", label: "Calls handled daily" },
-                { value: "99.9%", label: "Uptime SLA" },
-                { value: "100+", label: "Languages supported" },
+                { value: "5000+", label: "Leading companies" },
+                { value: "0ms", label: "Latency overhead" },
+                { value: "24/7", label: "Expert support" },
               ].map((stat, index) => (
                 <motion.div key={index} variants={itemVariants}>
                   <h3 className="text-3xl font-bold text-gray-100">{stat.value}</h3>
@@ -201,6 +196,7 @@ const Login = () => {
           className="flex h-full items-center justify-center overflow-hidden bg-[#08080a] px-6 py-6 sm:px-12 lg:px-16 xl:px-20"
         >
           <div className="w-full max-w-[420px]">
+            {/* Mobile Logo */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -211,6 +207,7 @@ const Login = () => {
               <span className="text-lg font-bold">Agni</span>
             </motion.div>
 
+            {/* Heading */}
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -221,41 +218,14 @@ const Login = () => {
                 variants={itemVariants}
                 className="text-[26px] font-bold tracking-[-0.5px] text-gray-100"
               >
-                Sign in
+                Create an account
               </motion.h2>
               <motion.p
                 variants={itemVariants}
                 className="mt-1 text-[13px] text-gray-400"
               >
-                Welcome back. Enter your credentials to continue.
+                Enter your details to get started.
               </motion.p>
-            </motion.div>
-
-            {/* Demo Credentials */}
-            <motion.div
-              variants={itemVariants}
-              initial="hidden"
-              animate="visible"
-              className="mb-3 rounded-md border border-cyan-400/20 bg-cyan-400/5 p-3"
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-[12px] font-semibold text-cyan-400">Demo Credentials</p>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  type="button"
-                  onClick={handleDemoLogin}
-                  className="text-[11px] font-semibold text-cyan-300 transition hover:text-white"
-                >
-                  Use Demo
-                </motion.button>
-              </div>
-              <p className="mt-1.5 text-[12px] text-gray-400">
-                Email: <span className="text-gray-200">{DEMO_EMAIL}</span>
-              </p>
-              <p className="mt-0.5 text-[12px] text-gray-400">
-                Password: <span className="text-gray-200">{DEMO_PASSWORD}</span>
-              </p>
             </motion.div>
 
             {/* Google Button */}
@@ -267,7 +237,7 @@ const Login = () => {
               whileTap={{ scale: isGoogleLoading ? 1 : 0.98 }}
               type="button"
               disabled={isGoogleLoading}
-              onClick={handleGoogleLogin}
+              onClick={handleGoogleSignup}
               className="flex h-9 w-full items-center justify-center gap-2.5 rounded-md border border-[#29292d] bg-[#101012] text-[13px] font-semibold text-gray-200 transition disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isGoogleLoading ? (
@@ -283,7 +253,7 @@ const Login = () => {
                     <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
                     <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
                   </svg>
-                  <span>Continue with Google</span>
+                  <span>Sign up with Google</span>
                 </>
               )}
             </motion.button>
@@ -322,9 +292,61 @@ const Login = () => {
               onSubmit={handleSubmit}
               className="space-y-2.5"
             >
+              {/* Organization Name */}
               <motion.div variants={itemVariants}>
-                <label htmlFor="email" className={labelClass}>
+                <label htmlFor="organizationName" className={labelClass}>
+                  Organization Name
+                </label>
+                <motion.input
+                  whileFocus={{ scale: 1.01 }}
+                  id="organizationName"
+                  name="organizationName"
+                  type="text"
+                  placeholder="Acme Corp"
+                  value={formData.organizationName}
+                  onChange={handleChange}
+                  required
+                  className={inputClass}
+                />
+              </motion.div>
+
+              {/* First / Last Name */}
+              <motion.div variants={itemVariants} className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label htmlFor="firstName" className={labelClass}>First Name</label>
+                  <motion.input
+                    whileFocus={{ scale: 1.01 }}
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className={labelClass}>Last Name</label>
+                  <motion.input
+                    whileFocus={{ scale: 1.01 }}
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                    className={inputClass}
+                  />
+                </div>
+              </motion.div>
+
+              {/* Email */}
+              <motion.div variants={itemVariants}>
+                <label htmlFor="email" className={`${labelClass} flex items-center gap-1`}>
                   Email
+                  <Info size={11} className="text-gray-500" />
                 </label>
                 <motion.input
                   whileFocus={{ scale: 1.01 }}
@@ -339,21 +361,42 @@ const Login = () => {
                 />
               </motion.div>
 
+              {/* Phone Number */}
               <motion.div variants={itemVariants}>
-                <div className="mb-1 flex items-center justify-between">
-                  <label htmlFor="password" className={labelClass}>
-                    Password
-                  </label>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    type="button"
-                    onClick={() => console.log("Forgot password clicked")}
-                    className="text-[12px] text-gray-400 transition hover:text-cyan-400"
+                <label htmlFor="phoneNumber" className={labelClass}>Phone Number</label>
+                <div className="flex gap-2">
+                  <select
+                    name="countryCode"
+                    value={formData.countryCode}
+                    onChange={handleChange}
+                    className="h-[38px] rounded-md border border-[#29292d] bg-[#101012] px-2.5 text-[13px] text-gray-100 outline-none transition focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
                   >
-                    Forgot?
-                  </motion.button>
+                    <option value="US +1">US +1</option>
+                    <option value="IN +91">IN +91</option>
+                    <option value="UK +44">UK +44</option>
+                    <option value="AU +61">AU +61</option>
+                    <option value="CA +1">CA +1</option>
+                    <option value="DE +49">DE +49</option>
+                    <option value="FR +33">FR +33</option>
+                    <option value="JP +81">JP +81</option>
+                  </select>
+                  <motion.input
+                    whileFocus={{ scale: 1.01 }}
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    placeholder="9876543210"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    required
+                    className={`${inputClass} flex-1`}
+                  />
                 </div>
+              </motion.div>
+
+              {/* Password */}
+              <motion.div variants={itemVariants}>
+                <label htmlFor="password" className={labelClass}>Password</label>
                 <div className="relative">
                   <motion.input
                     whileFocus={{ scale: 1.01 }}
@@ -364,6 +407,7 @@ const Login = () => {
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    minLength={8}
                     className={`${inputClass} pr-10`}
                   />
                   <motion.button
@@ -379,6 +423,30 @@ const Login = () => {
                 </div>
               </motion.div>
 
+              {/* Referral */}
+              <motion.div variants={itemVariants}>
+                <label htmlFor="referral" className={labelClass}>
+                  How did you hear about us?
+                </label>
+                <select
+                  id="referral"
+                  name="referral"
+                  value={formData.referral}
+                  onChange={handleChange}
+                  className="h-[38px] w-full rounded-md border border-[#29292d] bg-[#101012] px-3 text-[13px] text-gray-100 outline-none transition focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
+                >
+                  <option value="">Select an option</option>
+                  <option value="google">Google Search</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="twitter">Twitter / X</option>
+                  <option value="friend">Friend / Colleague</option>
+                  <option value="event">Conference / Event</option>
+                  <option value="blog">Blog / Article</option>
+                  <option value="other">Other</option>
+                </select>
+              </motion.div>
+
+              {/* Submit */}
               <motion.button
                 variants={itemVariants}
                 whileHover={{ scale: 1.02, backgroundColor: "#45d5f1" }}
@@ -386,22 +454,26 @@ const Login = () => {
                 type="submit"
                 className="group flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#25c7e8] text-[14px] font-semibold text-[#061015] transition"
               >
-                Sign in
+                Create account
                 <motion.span className="transition-transform group-hover:translate-x-1">
                   <ArrowRight size={16} />
                 </motion.span>
               </motion.button>
             </motion.form>
 
+            {/* Sign in link */}
             <motion.p
               variants={itemVariants}
               initial="hidden"
               animate="visible"
               className="mt-4 text-center text-[12.5px] text-gray-400"
             >
-              New to Agni?{" "}
-              <Link to="/register" className="font-semibold text-gray-200 transition hover:text-cyan-400">
-                Create an account
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-semibold text-gray-200 transition hover:text-cyan-400"
+              >
+                Sign in
               </Link>
             </motion.p>
           </div>
@@ -411,4 +483,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
