@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Bot,
@@ -15,6 +15,9 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  LogOut,
+  UserRound,
+  MessageSquare,
 } from "lucide-react";
 
 // ============================================================
@@ -48,9 +51,8 @@ const navigationGroups = [
   {
     title: "OPERATIONS",
     items: [
-      { label: "Analytics", icon: BarChart3, path: "/analytics" },
+      { label: "Phone Number", icon: BarChart3, path: "/phone-number" },
       { label: "Billing", icon: CreditCard, path: "/billing" },
-      { label: "Settings", icon: Settings, path: "/settings" },
     ],
   },
 ];
@@ -100,10 +102,74 @@ function SidebarItem({ item, collapsed }) {
 }
 
 // ============================================================
+// MENU ITEM (for dropdown)
+// ============================================================
+
+function MenuItem({ icon: Icon, label, onClick, danger = false }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        flex w-full items-center gap-3
+        rounded-lg px-3 py-2.5 text-left
+        text-[13px] font-medium
+        transition
+        ${
+          danger
+            ? "text-red-500 hover:bg-red-500/[0.08] dark:text-red-400 dark:hover:bg-red-500/[0.10]"
+            : "text-zinc-700 hover:bg-black/[0.04] dark:text-zinc-300 dark:hover:bg-white/[0.05]"
+        }
+      `}
+    >
+      <Icon size={16} className="shrink-0" />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+// ============================================================
 // SIDEBAR
 // ============================================================
 
 export default function Sidebar({ collapsed = false, onToggle }) {
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close on Escape
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, []);
+
+  // ------------------------------------------------------------
+  // LOGOUT
+  // ------------------------------------------------------------
+  const handleLogout = () => {
+    localStorage.removeItem("ravanai_auth");
+    setMenuOpen(false);
+    navigate("/login", { replace: true });
+  };
+
+  const handleNavigate = (path) => {
+    setMenuOpen(false);
+    navigate(path);
+  };
+
   return (
     <aside
       className={`
@@ -117,9 +183,8 @@ export default function Sidebar({ collapsed = false, onToggle }) {
       `}
     >
       {/* ======================================================
-          BRAND HEADER — reduced to 68px, matches Header height
+          BRAND HEADER
       ====================================================== */}
-
       <div
         className={`
           flex h-[68px] shrink-0 items-center
@@ -134,7 +199,6 @@ export default function Sidebar({ collapsed = false, onToggle }) {
             ${collapsed ? "justify-center" : "gap-2.5"}
           `}
         >
-          {/* Agni Logo */}
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-orange-400/30 bg-zinc-100 dark:bg-[#17181c]">
             <img
               src="/logo.svg"
@@ -145,7 +209,6 @@ export default function Sidebar({ collapsed = false, onToggle }) {
                 event.currentTarget.nextElementSibling.style.display = "flex";
               }}
             />
-
             <span className="hidden h-full w-full items-center justify-center text-sm font-bold text-orange-400">
               A
             </span>
@@ -163,7 +226,6 @@ export default function Sidebar({ collapsed = false, onToggle }) {
           )}
         </div>
 
-        {/* Collapse Button */}
         {!collapsed && (
           <button
             onClick={onToggle}
@@ -175,7 +237,6 @@ export default function Sidebar({ collapsed = false, onToggle }) {
         )}
       </div>
 
-      {/* Expand Button (collapsed state) */}
       {collapsed && (
         <button
           onClick={onToggle}
@@ -189,7 +250,6 @@ export default function Sidebar({ collapsed = false, onToggle }) {
       {/* ======================================================
           NAVIGATION
       ====================================================== */}
-
       <nav className="sidebar-scrollbar flex-1 overflow-y-auto px-3 py-4">
         <div className="space-y-5">
           {navigationGroups.map((group) => (
@@ -219,11 +279,15 @@ export default function Sidebar({ collapsed = false, onToggle }) {
       </nav>
 
       {/* ======================================================
-          USER PROFILE
+          USER PROFILE + DROPDOWN
       ====================================================== */}
-
-      <div className="shrink-0 border-t border-black/[0.06] p-2.5 dark:border-white/[0.06]">
+      <div
+        ref={menuRef}
+        className="relative shrink-0 border-t border-black/[0.06] p-2.5 dark:border-white/[0.06]"
+      >
+        {/* Trigger */}
         <button
+          onClick={() => setMenuOpen((prev) => !prev)}
           className={`
             flex w-full items-center gap-2.5 rounded-lg
             p-2 text-left transition
@@ -232,7 +296,6 @@ export default function Sidebar({ collapsed = false, onToggle }) {
             ${collapsed ? "justify-center" : ""}
           `}
         >
-          {/* Avatar */}
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cyan-400 text-[11px] font-bold text-[#071318]">
             AB
           </div>
@@ -242,21 +305,107 @@ export default function Sidebar({ collapsed = false, onToggle }) {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
                   <p className="truncate text-[12px] font-semibold text-zinc-900 dark:text-zinc-100">
-                    Akshada Bhamare
+                    Agni 
                   </p>
                   <span className="shrink-0 rounded bg-black/[0.06] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-zinc-600 dark:bg-white/[0.08] dark:text-zinc-400">
                     Admin
                   </span>
                 </div>
                 <p className="mt-0.5 truncate text-[10px] text-zinc-500">
-                  Bhamare Classes
+                  Softcrowd Technologies
                 </p>
               </div>
 
-              <ChevronDown size={14} className="shrink-0 text-zinc-400" />
+              <ChevronDown
+                size={14}
+                className={`shrink-0 text-zinc-400 transition-transform duration-200 ${
+                  menuOpen ? "rotate-180" : ""
+                }`}
+              />
             </>
           )}
         </button>
+
+        {/* ======================================================
+            DROPDOWN MENU — opens ABOVE the trigger
+        ====================================================== */}
+        {menuOpen && (
+          <div
+            className={`
+              absolute bottom-full z-50 mb-2
+              w-[240px] overflow-hidden
+              rounded-xl border
+              border-black/[0.08] bg-white
+              p-1.5
+              shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+              dark:border-white/[0.08]
+              dark:bg-[#15161a]
+              dark:shadow-[0_8px_30px_rgba(0,0,0,0.5)]
+              ${collapsed ? "left-2" : "left-0"}
+            `}
+          >
+            {/* Org Badge */}
+            <div className="flex items-center gap-2.5 rounded-lg px-3 py-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-cyan-500/30 bg-cyan-500/[0.08]">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-cyan-500 dark:text-cyan-400"
+                >
+                  <rect x="4" y="2" width="16" height="20" rx="2" />
+                  <path d="M9 22v-4h6v4" />
+                  <path d="M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01" />
+                </svg>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-semibold text-zinc-900 dark:text-zinc-100">
+                  Softcrowd Technologies
+                </p>
+              </div>
+
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-black/[0.06] px-1.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/[0.08] dark:text-zinc-400">
+                1
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="my-1 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
+
+            {/* Menu Items */}
+            <MenuItem
+              icon={UserRound}
+              label="Profile"
+              onClick={() => handleNavigate("/settings")}
+            />
+            <MenuItem
+              icon={Settings}
+              label="Settings"
+              onClick={() => handleNavigate("/settings")}
+            />
+            <MenuItem
+              icon={MessageSquare}
+              label="Feedback"
+              onClick={() => handleNavigate("/feedback")}
+            />
+
+            {/* Divider */}
+            <div className="my-1 h-px bg-black/[0.06] dark:bg-white/[0.06]" />
+
+            <MenuItem
+              icon={LogOut}
+              label="Log out"
+              onClick={handleLogout}
+              danger
+            />
+          </div>
+        )}
       </div>
     </aside>
   );

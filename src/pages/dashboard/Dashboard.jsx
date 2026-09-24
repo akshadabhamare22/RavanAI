@@ -612,7 +612,7 @@
             <section>
             <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-[22px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100 sm:text-2xl">
-                Good Afternoon, Akshada
+                Good Afternoon, Agni
                 </h1>
                 <Info size={15} className="text-zinc-400" />
             </div>
