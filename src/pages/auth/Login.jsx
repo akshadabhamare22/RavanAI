@@ -132,11 +132,11 @@ const Login = () => {
               <motion.img
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 src="/logo.svg"
-                alt="Agni Logo"
+                alt="Jeeva Logo"
                 className="h-12 w-12 rounded-full object-contain"
                 onError={(e) => { e.currentTarget.style.display = "none"; }}
               />
-              <span className="text-2xl font-bold tracking-tight">Agni</span>
+              <span className="text-2xl font-bold tracking-tight">JeevaAI</span>
             </motion.div>
 
             <motion.div
@@ -207,8 +207,8 @@ const Login = () => {
               transition={{ delay: 0.3, duration: 0.6 }}
               className="mb-4 flex items-center gap-2 lg:hidden"
             >
-              <img src="/logo.svg" alt="Agni Logo" className="h-9 w-9 rounded-full object-contain" />
-              <span className="text-lg font-bold">Agni</span>
+              <img src="/logo.svg" alt="Jeeva Logo" className="h-9 w-9 rounded-full object-contain" />
+              <span className="text-lg font-bold">JeevaAI</span>
             </motion.div>
 
             <motion.div
@@ -412,3 +412,5 @@ const Login = () => {
 };
 
 export default Login;
+
+

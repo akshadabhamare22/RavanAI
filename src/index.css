@@ -48,7 +48,7 @@ html.dark {
 
 
 /* ============================================================
-   SMOOTH COLOR TRANSITIONS — FAST BUT NOT INSTANT
+   SMOOTH COLOR TRANSITIONS
    ============================================================ */
 
 *,
@@ -58,7 +58,9 @@ html.dark {
 }
 
 
-/* Prevent transition on initial page load (avoids flash) */
+/* ============================================================
+   DISABLE TRANSITIONS DURING THEME SWAP
+   ============================================================ */
 
 html.no-transition,
 html.no-transition *,
@@ -69,7 +71,7 @@ html.no-transition *::after {
 
 
 /* ============================================================
-   ✨ THEME RIPPLE — Expanding circle from toggle button
+   THEME RIPPLE — EXPANDING CIRCLE
    ============================================================ */
 
 .theme-ripple {
@@ -89,9 +91,8 @@ html.no-transition *::after {
     height: 0;
     border-radius: 9999px;
     transform: translate(-50%, -50%);
-    /* Expand faster so it covers screen quickly */
+    background: var( --ripple-color, #09090B);
     animation: ripple-expand 500ms cubic-bezier(0.4, 0, 0.6, 1) forwards;
-    background: var(--ripple-color, #09090B);
     will-change: width, height;
 }
 
@@ -107,21 +108,26 @@ html.no-transition *::after {
 }
 
 
-/* Fade out AFTER covering the screen */
+/* ============================================================
+   THEME RIPPLE FADE
+   ============================================================ */
 
 .theme-ripple.fade-out::before {
-    animation: ripple-expand 500ms cubic-bezier(0.4, 0, 0.6, 1) forwards, ripple-fade 250ms ease-out 500ms forwards;
+    animation: ripple-expand 500ms cubic-bezier(0.4, 0, 0.6, 1) forwards, ripple-fade 300ms ease-out 500ms forwards;
 }
 
 @keyframes ripple-fade {
-    to {
+    0% {
+        opacity: 1;
+    }
+    100% {
         opacity: 0;
     }
 }
 
 
 /* ============================================================
-   SIDEBAR SCROLLBAR — Hidden but scrollable
+   SIDEBAR SCROLLBAR — HIDDEN BUT SCROLLABLE
    ============================================================ */
 
 .sidebar-scrollbar {
@@ -137,7 +143,7 @@ html.no-transition *::after {
 
 
 /* ============================================================
-   PIXEL GRID REVEAL (optional)
+   PIXEL GRID REVEAL
    ============================================================ */
 
 .theme-grid {
@@ -152,7 +158,7 @@ html.no-transition *::after {
 }
 
 .theme-grid span {
-    background: var(--grid-color, #09090B);
+    background: var( --grid-color, #09090B);
     opacity: 0;
     transform: scale(0);
     animation: grid-pop 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -171,5 +177,100 @@ html.no-transition *::after {
     100% {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+
+/* ============================================================
+   GLOBE — SMOOTH RENDERING
+   ============================================================ */
+
+canvas {
+    outline: none;
+}
+
+canvas:focus {
+    outline: none;
+}
+
+
+/* ============================================================
+   GLOBE LOADING SHIMMER
+   ============================================================ */
+
+.globe-loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.globe-loading::after {
+    content: "";
+    position: absolute;
+    inset: -50%;
+    background: linear-gradient( 90deg, transparent, rgba(34, 211, 238, 0.08), transparent);
+    transform: translateX(-100%);
+    animation: globe-shimmer 1.8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes globe-shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+
+/* ============================================================
+   GLOBAL REACH CARD GLOW
+   ============================================================ */
+
+@keyframes soft-cyan-pulse {
+    0%,
+    100% {
+        opacity: 0.25;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.45;
+        transform: scale(1.08);
+    }
+}
+
+
+/* ============================================================
+   LIVE DOT PULSE
+   ============================================================ */
+
+@keyframes live-dot-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.8);
+        opacity: 0.35;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+
+/* ============================================================
+   REDUCE MOTION — ACCESSIBILITY
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
