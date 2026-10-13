@@ -14,10 +14,7 @@ export function flashSnackbar(message, type = "success") {
   }
 }
 
-// const { showSnackbar, snackbar } = useSnackbar();
-// showSnackbar("Source added — indexing started");
-// showSnackbar("Something failed", "error");
-// ...and render {snackbar} once inside the page.
+
 export default function useSnackbar() {
   const isDark = useKbTheme();
   const [item, setItem] = useState(null);

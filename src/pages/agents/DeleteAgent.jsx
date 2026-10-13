@@ -1,53 +1,20 @@
-import React from "react";
-import { AlertTriangle } from "lucide-react";
+import React, { useState } from "react";
+import { AlertTriangle, LoaderCircle, Trash2, X } from "lucide-react";
 
 export default function DeleteAgent({ agent, onClose, onConfirm }) {
+  const [deleting, setDeleting] = useState(false);
   if (!agent) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-black/[0.08] bg-white shadow-2xl dark:border-white/[0.08] dark:bg-[#101012]">
-        <div className="p-6 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
-            <AlertTriangle
-              size={22}
-              className="text-red-500 dark:text-red-400"
-            />
-          </div>
-
-          <h3 className="mt-4 text-base font-semibold text-zinc-900 dark:text-zinc-100">
-            Delete agent
-          </h3>
-
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Are you sure you want to delete{" "}
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">
-              "{agent.name}"
-            </span>
-            ? This action cannot be undone.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 border-t border-black/[0.06] p-4 dark:border-white/[0.06]">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-black/[0.08] py-2.5 text-sm font-medium text-zinc-700 dark:border-white/[0.08] dark:text-zinc-300"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onConfirm(agent.id)}
-            className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  const confirm = async () => {
+    setDeleting(true);
+    try { await onConfirm?.(agent.id); }
+    finally { setDeleting(false); }
+  };
+  return <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget && !deleting) onClose?.(); }}>
+    <section className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-900 shadow-2xl dark:border-zinc-700 dark:bg-[#111114] dark:text-zinc-100">
+      <div className="mb-4 flex items-start justify-between"><div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-100 text-red-600"><AlertTriangle size={22}/></div><button onClick={onClose} disabled={deleting} className="rounded-lg p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800"><X size={18}/></button></div>
+      <h2 className="text-lg font-semibold">Delete agent?</h2>
+      <p className="mt-2 text-sm text-zinc-500">This permanently deletes <strong className="text-zinc-800 dark:text-zinc-200">{agent.name || "this agent"}</strong> from the server. This action cannot be undone.</p>
+      <div className="mt-6 flex justify-end gap-2"><button onClick={onClose} disabled={deleting} className="rounded-lg border px-4 py-2 text-sm dark:border-zinc-700">Cancel</button><button onClick={confirm} disabled={deleting} className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">{deleting ? <LoaderCircle size={15} className="animate-spin"/> : <Trash2 size={15}/>}Delete permanently</button></div>
+    </section>
+  </div>;
 }

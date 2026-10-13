@@ -1,5 +1,2095 @@
+// import React, { useEffect, useRef, useState } from "react";
+// import { AnimatePresence, motion } from "framer-motion";
+// import {
+//   X,
+//   MoreVertical,
+//   Paperclip,
+//   Smile,
+//   Send,
+//   Trash2,
+//   FileText,
+//   MessageSquarePlus,
+// } from "lucide-react";
+
+// // ============================================================
+// // CONFIG
+// // ============================================================
+// const DEFAULT_LOGO = "/jeeva-logo.png";
+
+// const EMOJIS = [
+//   "😀", "😊", "👍", "🙏", "🎉", "❤️", "😂", "🤝", "🔥", "✅",
+//   "😍", "😎", "🤔", "😅", "🙌", "👏", "💡", "🚀", "✨", "🎯"
+// ];
+
+// const INITIAL_MESSAGES = [
+//   { id: "d1", type: "date", label: "Today" },
+//   { id: "m1", type: "message", from: "user", text: "I'd like to book a demo.", time: "12:23 PM" },
+//   {
+//     id: "m2",
+//     type: "message",
+//     from: "agent",
+//     name: "Jeeva",
+//     text: "Sure, please share your preferred date and time, and we'll schedule the call accordingly.",
+//     time: "12:23 PM",
+//   },
+// ];
+
+// const nowTime = () =>
+//   new Date().toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+
+// // ============================================================
+// // STANDARD ANIMATION VARIANTS
+// // ============================================================
+// const chatWindowVariants = {
+//   hidden: { opacity: 0, y: 20, scale: 0.96 },
+//   visible: {
+//     opacity: 1,
+//     y: 0,
+//     scale: 1,
+//     transition: { type: "spring", stiffness: 300, damping: 26 },
+//   },
+//   exit: {
+//     opacity: 0,
+//     y: 16,
+//     scale: 0.97,
+//     transition: { duration: 0.18, ease: "easeIn" },
+//   },
+// };
+
+// const messageVariants = {
+//   hidden: (isUser) => ({
+//     opacity: 0,
+//     x: isUser ? 16 : -16,
+//     y: 8,
+//   }),
+//   visible: {
+//     opacity: 1,
+//     x: 0,
+//     y: 0,
+//     transition: { type: "spring", stiffness: 400, damping: 28 },
+//   },
+// };
+
+// const emojiTrayVariants = {
+//   hidden: { opacity: 0, y: 10, scale: 0.97, transformOrigin: "bottom center" },
+//   visible: {
+//     opacity: 1,
+//     y: 0,
+//     scale: 1,
+//     transition: { type: "spring", stiffness: 400, damping: 28 },
+//   },
+//   exit: { opacity: 0, y: 8, scale: 0.97, transition: { duration: 0.15 } },
+// };
+
+// const emojiItemVariants = {
+//   hidden: { opacity: 0, scale: 0.7 },
+//   visible: (i) => ({
+//     opacity: 1,
+//     scale: 1,
+//     transition: { delay: i * 0.012, type: "spring", stiffness: 400, damping: 25 },
+//   }),
+//   hover: { scale: 1.2, transition: { duration: 0.15 } },
+//   tap: { scale: 0.9 },
+// };
+
+// const dropdownVariants = {
+//   hidden: { opacity: 0, y: -6, scale: 0.97, transformOrigin: "top right" },
+//   visible: {
+//     opacity: 1,
+//     y: 0,
+//     scale: 1,
+//     transition: { type: "spring", stiffness: 400, damping: 28 },
+//   },
+//   exit: { opacity: 0, y: -4, scale: 0.97, transition: { duration: 0.14 } },
+// };
+
+// const typingDotVariants = {
+//   initial: { y: 0, opacity: 0.4 },
+//   animate: (i) => ({
+//     y: [0, -4, 0],
+//     opacity: [0.4, 1, 0.4],
+//     transition: {
+//       duration: 1,
+//       repeat: Infinity,
+//       ease: "easeInOut",
+//       delay: i * 0.15,
+//     },
+//   }),
+// };
+
+// const fileChipVariants = {
+//   hidden: { opacity: 0, y: -6, height: 0, marginBottom: 0 },
+//   visible: {
+//     opacity: 1,
+//     y: 0,
+//     height: "auto",
+//     marginBottom: 8,
+//     transition: { type: "spring", stiffness: 400, damping: 30 },
+//   },
+//   exit: { opacity: 0, y: -6, height: 0, marginBottom: 0, transition: { duration: 0.15 } },
+// };
+
+// const statusDotVariants = {
+//   animate: {
+//     opacity: [1, 0.6, 1],
+//     transition: { duration: 2.5, repeat: Infinity, ease: "easeInOut" },
+//   },
+// };
+
+// // ⭐ Circular motion variant for the launcher
+// const launcherOrbitVariants = {
+//   animate: {
+//     rotate: 360,
+//     transition: {
+//       duration: 20,           // full circle in 20s — smooth, continuous
+//       repeat: Infinity,
+//       ease: "linear",
+//     },
+//   },
+// };
+
+// // ⭐ Counter-rotate so the icon stays upright inside the orbiting wrapper
+// const launcherIconCounterVariants = {
+//   animate: {
+//     rotate: -360,
+//     transition: {
+//       duration: 20,
+//       repeat: Infinity,
+//       ease: "linear",
+//     },
+//   },
+// };
+
+// // ============================================================
+// // LOGO
+// // ============================================================
+// function Logo({ src, size = 48, ring = true }) {
+//   const [failed, setFailed] = useState(false);
+//   return (
+//     <div
+//       className="relative shrink-0 overflow-hidden rounded-full bg-[#1a0d06]"
+//       style={{
+//         width: size,
+//         height: size,
+//         boxShadow: ring ? "0 0 0 2px rgba(255,255,255,0.35)" : undefined,
+//       }}
+//     >
+//       {!failed && src ? (
+//         <img
+//           src={src}
+//           alt="Jeeva"
+//           onError={() => setFailed(true)}
+//           className="h-full w-full object-cover"
+//           draggable={false}
+//         />
+//       ) : (
+//         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-orange-500 to-red-700 text-white">
+//           <svg viewBox="0 0 24 24" width={size * 0.5} height={size * 0.5} fill="currentColor">
+//             <path d="M12 2s1 3.5-1.5 6C8 10.5 6 12.5 6 15.5A6 6 0 0 0 18 15c0-2-1-3.5-2-5 0 0-.5 2-2 2.5C15 9 12 2 12 2z" />
+//           </svg>
+//           <span style={{ fontSize: size * 0.18 }} className="-mt-0.5 font-extrabold tracking-wider">
+//             JEEVA
+//           </span>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+// // ============================================================
+// // CHATBOT
+// // ============================================================
+// export default function ChatBot({
+//   logoSrc = DEFAULT_LOGO,
+//   agentName = "Jeeva",
+//   userInitials = "AB",
+//   defaultOpen = false,
+//   onSendMessage,
+// }) {
+//   const [open, setOpen] = useState(defaultOpen);
+//   const [messages, setMessages] = useState(INITIAL_MESSAGES);
+//   const [input, setInput] = useState("");
+//   const [file, setFile] = useState(null);
+//   const [typing, setTyping] = useState(false);
+//   const [menuOpen, setMenuOpen] = useState(false);
+//   const [emojiOpen, setEmojiOpen] = useState(false);
+//   const [unread, setUnread] = useState(0);
+
+//   const endRef = useRef(null);
+//   const fileRef = useRef(null);
+//   const inputRef = useRef(null);
+
+//   useEffect(() => {
+//     if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
+//   }, [messages, typing, open]);
+
+//   useEffect(() => {
+//     if (open) {
+//       setUnread(0);
+//       window.setTimeout(() => inputRef.current?.focus(), 300);
+//     }
+//   }, [open]);
+
+//   useEffect(() => {
+//     const close = () => {
+//       setMenuOpen(false);
+//       setEmojiOpen(false);
+//     };
+//     window.addEventListener("click", close);
+//     return () => window.removeEventListener("click", close);
+//   }, []);
+
+//   const pushAgent = (text, name = "Jeeva") => {
+//     setMessages((prev) => [
+//       ...prev,
+//       { id: `a-${Date.now()}`, type: "message", from: "agent", name, text, time: nowTime() },
+//     ]);
+//     if (!open) setUnread((n) => n + 1);
+//   };
+
+//   const handleSend = async () => {
+//     const text = input.trim();
+//     if (!text && !file) return;
+
+//     setMessages((prev) => [
+//       ...prev,
+//       {
+//         id: `u-${Date.now()}`,
+//         type: "message",
+//         from: "user",
+//         text,
+//         fileName: file?.name,
+//         time: nowTime(),
+//       },
+//     ]);
+
+//     const sentFile = file;
+//     setInput("");
+//     setFile(null);
+//     setEmojiOpen(false);
+//     setTyping(true);
+
+//     try {
+//       let reply;
+//       if (onSendMessage) {
+//         reply = await onSendMessage(text, sentFile);
+//       } else {
+//         await new Promise((r) => setTimeout(r, 900));
+//         reply = "Thanks for your message! Our team will get back to you shortly.";
+//       }
+//       if (reply) {
+//         if (typeof reply === "string") pushAgent(reply);
+//         else pushAgent(reply.text, reply.name);
+//       }
+//     } catch (err) {
+//       console.error("Chat error:", err);
+//       pushAgent("Sorry, something went wrong. Please try again.");
+//     } finally {
+//       setTyping(false);
+//     }
+//   };
+
+//   const handleKeyDown = (e) => {
+//     if (e.key === "Enter" && !e.shiftKey) {
+//       e.preventDefault();
+//       handleSend();
+//     }
+//   };
+
+//   const clearChat = () => {
+//     setMessages([]);
+//     setMenuOpen(false);
+//   };
+
+//   const canSend = input.trim().length > 0 || !!file;
+
+//   return (
+//     <div className="fixed bottom-3 right-5 z-[250] flex flex-col items-end gap-3 font-sans">
+//       <AnimatePresence mode="wait">
+//         {open && (
+//           <motion.div
+//             key="chat-window"
+//             variants={chatWindowVariants}
+//             initial="hidden"
+//             animate="visible"
+//             exit="exit"
+//             style={{ transformOrigin: "bottom right" }}
+//             className="flex h-[min(670px,calc(90vh-6rem))] w-[410px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] dark:border-white/10 dark:bg-[#121214]"
+//           >
+//             {/* HEADER */}
+//             <div className="relative flex items-center gap-3 bg-gradient-to-r from-orange-600 to-orange-500 px-5 py-4 text-white">
+//               <div className="relative">
+//                 <Logo src={logoSrc} size={46} />
+//                 <motion.span
+//                   variants={statusDotVariants}
+//                   animate="animate"
+//                   className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-orange-500 bg-emerald-400"
+//                 />
+//               </div>
+
+//               <div className="min-w-0 flex-1">
+//                 <p className="truncate text-[16px] font-semibold leading-tight">{agentName}</p>
+//                 <p className="text-[12.5px] text-white/90">Online now</p>
+//               </div>
+
+//               <div className="relative" onClick={(e) => e.stopPropagation()}>
+//                 <motion.button
+//                   type="button"
+//                   aria-label="More options"
+//                   onClick={() => {
+//                     setMenuOpen((v) => !v);
+//                     setEmojiOpen(false);
+//                   }}
+//                   whileHover={{ scale: 1.06 }}
+//                   whileTap={{ scale: 0.94 }}
+//                   transition={{ type: "spring", stiffness: 400, damping: 22 }}
+//                   className="rounded-full p-2 transition hover:bg-white/15"
+//                 >
+//                   <MoreVertical size={19} />
+//                 </motion.button>
+
+//                 <AnimatePresence>
+//                   {menuOpen && (
+//                     <motion.div
+//                       variants={dropdownVariants}
+//                       initial="hidden"
+//                       animate="visible"
+//                       exit="exit"
+//                       className="absolute right-0 top-full z-10 mt-2 w-56 overflow-hidden rounded-xl border border-black/5 bg-white py-1 text-sm text-zinc-700 shadow-xl dark:border-white/10 dark:bg-[#1a1a1d] dark:text-zinc-200"
+//                     >
+//                       <motion.button
+//                         type="button"
+//                         whileHover={{ backgroundColor: "rgba(0,0,0,0.03)" }}
+//                         onClick={clearChat}
+//                         className="flex w-full items-center gap-2 px-4 py-2.5 dark:hover:bg-white/5"
+//                       >
+//                         <MessageSquarePlus size={15} /> Start new conversation
+//                       </motion.button>
+//                       <motion.button
+//                         type="button"
+//                         whileHover={{ backgroundColor: "rgba(239,68,68,0.06)" }}
+//                         onClick={clearChat}
+//                         className="flex w-full items-center gap-2 px-4 py-2.5 text-red-500"
+//                       >
+//                         <Trash2 size={15} /> Clear chat
+//                       </motion.button>
+//                     </motion.div>
+//                   )}
+//                 </AnimatePresence>
+//               </div>
+
+//               <motion.button
+//                 type="button"
+//                 aria-label="Close chat"
+//                 onClick={() => setOpen(false)}
+//                 whileHover={{ scale: 1.06 }}
+//                 whileTap={{ scale: 0.94 }}
+//                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
+//                 className="rounded-full p-2 transition hover:bg-white/15"
+//               >
+//                 <X size={20} />
+//               </motion.button>
+//             </div>
+
+//             {/* MESSAGES AREA */}
+//             <div className="flex-1 space-y-4 overflow-y-auto bg-white px-5 py-5 dark:bg-[#0e0e10]">
+//               {messages.length === 0 && (
+//                 <motion.p
+//                   initial={{ opacity: 0 }}
+//                   animate={{ opacity: 1 }}
+//                   className="mt-16 text-center text-sm text-zinc-400"
+//                 >
+//                   No messages yet. Say hello 👋
+//                 </motion.p>
+//               )}
+
+//               <AnimatePresence initial={false}>
+//                 {messages.map((m) => {
+//                   if (m.type === "date") {
+//                     return (
+//                       <motion.div
+//                         key={m.id}
+//                         initial={{ opacity: 0 }}
+//                         animate={{ opacity: 1 }}
+//                         className="flex items-center gap-3 py-1"
+//                       >
+//                         <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
+//                         <span className="text-[12px] text-zinc-400">{m.label}</span>
+//                         <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
+//                       </motion.div>
+//                     );
+//                   }
+
+//                   if (m.type === "system") {
+//                     return (
+//                       <motion.div
+//                         key={m.id}
+//                         initial={{ opacity: 0, y: 6 }}
+//                         animate={{ opacity: 1, y: 0 }}
+//                         className="flex justify-center"
+//                       >
+//                         <span className="rounded-full bg-zinc-200/70 px-4 py-1.5 text-[12.5px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400">
+//                           {m.text}
+//                         </span>
+//                       </motion.div>
+//                     );
+//                   }
+
+//                   const isUser = m.from === "user";
+
+//                   return (
+//                     <motion.div
+//                       key={m.id}
+//                       layout
+//                       variants={messageVariants}
+//                       initial="hidden"
+//                       animate="visible"
+//                       custom={isUser}
+//                       className={`flex items-start gap-2 ${
+//                         isUser ? "justify-end" : "justify-start"
+//                       }`}
+//                     >
+//                       {!isUser && (
+//                         <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[12px] font-semibold text-white dark:bg-zinc-700">
+//                           {(m.name || "J").charAt(0)}
+//                         </div>
+//                       )}
+
+//                       <div className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+//                         <motion.div
+//                           whileHover={{ scale: 1.015 }}
+//                           transition={{ duration: 0.15 }}
+//                           className={`rounded-[20px] px-4 py-2.5 text-[14px] leading-snug shadow-sm ${
+//                             isUser
+//                               ? "bg-[#e67e22] text-white"
+//                               : "border border-zinc-200 bg-white text-zinc-800 dark:border-white/10 dark:bg-[#18181b] dark:text-zinc-100"
+//                           }`}
+//                         >
+//                           {m.fileName && (
+//                             <div className="mb-1 flex items-center gap-1.5 text-[12px] text-white/85">
+//                               <FileText size={13} />
+//                               <span className="max-w-[200px] truncate">{m.fileName}</span>
+//                             </div>
+//                           )}
+//                           {m.text}
+//                         </motion.div>
+//                         <span className="mt-1.5 text-[11px] text-zinc-400">{m.time}</span>
+//                       </div>
+
+//                       {isUser && (
+//                         <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e67e22] text-[11px] font-semibold text-white">
+//                           {userInitials}
+//                         </div>
+//                       )}
+//                     </motion.div>
+//                   );
+//                 })}
+//               </AnimatePresence>
+
+//               <AnimatePresence>
+//                 {typing && (
+//                   <motion.div
+//                     initial={{ opacity: 0, y: 6 }}
+//                     animate={{ opacity: 1, y: 0 }}
+//                     exit={{ opacity: 0, y: 6 }}
+//                     className="flex items-end gap-2"
+//                   >
+//                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[12px] font-semibold text-white">
+//                       J
+//                     </div>
+//                     <div className="flex items-center gap-1 rounded-[20px] border border-zinc-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-[#18181b]">
+//                       {[0, 1, 2].map((i) => (
+//                         <motion.span
+//                           key={i}
+//                           custom={i}
+//                           variants={typingDotVariants}
+//                           initial="initial"
+//                           animate="animate"
+//                           className="h-1.5 w-1.5 rounded-full bg-zinc-400"
+//                         />
+//                       ))}
+//                     </div>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+
+//               <div ref={endRef} />
+//             </div>
+
+//             {/* FOOTER */}
+//             <div className="relative border-t border-zinc-100 bg-white px-4 pb-3 pt-3 dark:border-white/10 dark:bg-[#121214]">
+//               <AnimatePresence>
+//                 {file && (
+//                   <motion.div
+//                     variants={fileChipVariants}
+//                     initial="hidden"
+//                     animate="visible"
+//                     exit="exit"
+//                     className="flex items-center gap-2 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+//                   >
+//                     <FileText size={13} />
+//                     <span className="flex-1 truncate">{file.name}</span>
+//                     <motion.button
+//                       whileHover={{ scale: 1.15 }}
+//                       whileTap={{ scale: 0.9 }}
+//                       type="button"
+//                       onClick={() => setFile(null)}
+//                       aria-label="Remove file"
+//                     >
+//                       <X size={13} />
+//                     </motion.button>
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+
+//               <AnimatePresence>
+//                 {emojiOpen && (
+//                   <motion.div
+//                     variants={emojiTrayVariants}
+//                     initial="hidden"
+//                     animate="visible"
+//                     exit="exit"
+//                     onClick={(e) => e.stopPropagation()}
+//                     className="absolute bottom-full left-4 right-4 mb-2 grid grid-cols-10 gap-1 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-[#1a1a1d]"
+//                   >
+//                     {EMOJIS.map((emoji, i) => (
+//                       <motion.button
+//                         key={emoji}
+//                         custom={i}
+//                         variants={emojiItemVariants}
+//                         initial="hidden"
+//                         animate="visible"
+//                         whileHover="hover"
+//                         whileTap="tap"
+//                         type="button"
+//                         onClick={() => {
+//                           setInput((v) => v + emoji);
+//                           inputRef.current?.focus();
+//                         }}
+//                         className="rounded-md p-1.5 text-lg transition hover:bg-zinc-100 dark:hover:bg-white/10"
+//                       >
+//                         {emoji}
+//                       </motion.button>
+//                     ))}
+//                   </motion.div>
+//                 )}
+//               </AnimatePresence>
+
+//               <div className="flex items-center gap-2">
+//                 <input
+//                   ref={fileRef}
+//                   type="file"
+//                   className="hidden"
+//                   onChange={(e) => {
+//                     setFile(e.target.files?.[0] || null);
+//                     e.target.value = "";
+//                   }}
+//                 />
+
+//                 <motion.button
+//                   type="button"
+//                   aria-label="Attach file"
+//                   onClick={() => fileRef.current?.click()}
+//                   whileHover={{ scale: 1.1 }}
+//                   whileTap={{ scale: 0.92 }}
+//                   className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-white/10"
+//                 >
+//                   <Paperclip size={19} />
+//                 </motion.button>
+
+//                 <input
+//                   ref={inputRef}
+//                   type="text"
+//                   value={input}
+//                   onChange={(e) => setInput(e.target.value)}
+//                   onKeyDown={handleKeyDown}
+//                   placeholder="Type a message..."
+//                   className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[14px] text-zinc-800 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
+//                 />
+
+//                 <motion.button
+//                   type="button"
+//                   aria-label="Emoji"
+//                   onClick={(e) => {
+//                     e.stopPropagation();
+//                     setEmojiOpen((v) => !v);
+//                     setMenuOpen(false);
+//                   }}
+//                   whileHover={{ scale: 1.1 }}
+//                   whileTap={{ scale: 0.92 }}
+//                   className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-white/10"
+//                 >
+//                   <Smile size={19} />
+//                 </motion.button>
+
+//                 <motion.button
+//                   type="button"
+//                   aria-label="Send message"
+//                   onClick={handleSend}
+//                   disabled={!canSend || typing}
+//                   whileHover={canSend ? { scale: 1.06 } : {}}
+//                   whileTap={canSend ? { scale: 0.92 } : {}}
+//                   transition={{ type: "spring", stiffness: 450, damping: 22 }}
+//                   className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${
+//                     canSend && !typing
+//                       ? "bg-[#e67e22] text-white hover:bg-[#d35400]"
+//                       : "bg-zinc-100 text-zinc-400 dark:bg-white/10"
+//                   }`}
+//                 >
+//                   <Send size={17} />
+//                 </motion.button>
+//               </div>
+
+//               <p className="mt-2 text-center text-[11px] text-zinc-400">
+//                 Powered by <span className="font-semibold text-zinc-500">Ravan</span>
+//               </p>
+//             </div>
+//           </motion.div>
+//         )}
+//       </AnimatePresence>
+
+//     {/* ====================================================
+//     LAUNCHER BUTTON — SPINNER STYLE (गोल फिरणारा)
+// ==================================================== */}
+// <motion.button
+//   type="button"
+//   aria-label={open ? "Close chat" : "Open chat"}
+//   onClick={() => setOpen((v) => !v)}
+//   initial={{ scale: 0, opacity: 0 }}
+//   animate={{ scale: 1, opacity: 1 }}
+//   transition={{ type: "spring", stiffness: 300, damping: 24, delay: 0.2 }}
+//   whileHover={{ scale: 1.08 }}
+//   whileTap={{ scale: 0.94 }}
+//   className="relative h-[60px] w-[60px] rounded-full border-[3px] border-orange-500 bg-[#1a0d06] p-0 shadow-[0_8px_24px_rgba(234,88,12,0.4)]"
+// >
+//   {/* 🌀 SPINNER — logo सतत गोल फिरत राहील */}
+//   <motion.div
+//     className="flex h-full w-full items-center justify-center"
+//     animate={{ rotate: 360 }}
+//     transition={{
+//       duration: 3,        // ⬅️ 3 सेकंदात एक पूर्ण फेर — कमी कर = जास्त वेग
+//       repeat: Infinity,
+//       ease: "linear",
+//     }}
+//     style={{ transformOrigin: "center center" }}
+//   >
+//     <Logo src={logoSrc} size={54} ring={false} />
+//   </motion.div>
+
+//   <AnimatePresence>
+//     {unread > 0 && !open && (
+//       <motion.span
+//         initial={{ scale: 0 }}
+//         animate={{ scale: 1 }}
+//         exit={{ scale: 0 }}
+//         transition={{ type: "spring", stiffness: 500, damping: 22 }}
+//         className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white"
+//       >
+//         {unread}
+//       </motion.span>
+//     )}
+//   </AnimatePresence>
+// </motion.button>
+//     </div>
+//   );
+// }
+
+
+// import React, { useEffect, useRef, useState } from "react";
+// import axios from "axios";
+// import config from "../../config/Config";
+// import { AnimatePresence, motion } from "framer-motion";
+
+// import {
+
+//   X,
+
+//   MoreVertical,
+
+//   Paperclip,
+
+//   Smile,
+
+//   Send,
+
+//   Trash2,
+
+//   FileText,
+
+//   MessageSquarePlus,
+
+// } from "lucide-react";
+
+
+
+// // ============================================================
+
+// // CONFIG
+
+// // ============================================================
+
+// const DEFAULT_LOGO = "/jeeva-logo.png";
+
+
+
+// const EMOJIS = [
+
+//   "😀", "😊", "👍", "🙏", "🎉", "❤️", "😂", "🤝", "🔥", "✅",
+
+//   "😍", "😎", "🤔", "😅", "🙌", "👏", "💡", "🚀", "✨", "🎯"
+
+// ];
+
+
+
+// const INITIAL_MESSAGES = [];
+
+// const DEFAULT_CONVERSATION_ID = "chat_6f713e1800be4ee4b51bc17b0c5ae40a";
+
+// const createConversationId = () => {
+//   if (typeof crypto !== "undefined" && crypto.randomUUID) {
+//     return `chat_${crypto.randomUUID().replaceAll("-", "")}`;
+//   }
+//   return `chat_${Date.now()}${Math.random().toString(16).slice(2, 10)}`;
+// };
+
+// const formatMessageTime = (createdAt) => {
+//   if (!createdAt) return nowTime();
+//   const date = new Date(createdAt);
+//   if (Number.isNaN(date.getTime())) return nowTime();
+//   return date.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+// };
+
+// const mapApiMessages = (items, agentName) =>
+//   (Array.isArray(items) ? items : []).map((item, index) => ({
+//     id: `api-${index}-${item.created_at || index}`,
+//     type: "message",
+//     from: item.role === "user" ? "user" : "agent",
+//     name: item.role === "user" ? undefined : agentName,
+//     text: typeof item.content === "string" ? item.content : "",
+//     time: formatMessageTime(item.created_at),
+//   }));
+
+// const nowTime = () =>
+
+//   new Date().toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+
+
+
+// // ============================================================
+
+// // STANDARD ANIMATION VARIANTS
+
+// // ============================================================
+
+// const chatWindowVariants = {
+
+//   hidden: { opacity: 0, y: 20, scale: 0.96 },
+
+//   visible: {
+
+//     opacity: 1,
+
+//     y: 0,
+
+//     scale: 1,
+
+//     transition: { type: "spring", stiffness: 300, damping: 26 },
+
+//   },
+
+//   exit: {
+
+//     opacity: 0,
+
+//     y: 16,
+
+//     scale: 0.97,
+
+//     transition: { duration: 0.18, ease: "easeIn" },
+
+//   },
+
+// };
+
+
+
+// const messageVariants = {
+
+//   hidden: (isUser) => ({
+
+//     opacity: 0,
+
+//     x: isUser ? 16 : -16,
+
+//     y: 8,
+
+//   }),
+
+//   visible: {
+
+//     opacity: 1,
+
+//     x: 0,
+
+//     y: 0,
+
+//     transition: { type: "spring", stiffness: 400, damping: 28 },
+
+//   },
+
+// };
+
+
+
+// const emojiTrayVariants = {
+
+//   hidden: { opacity: 0, y: 10, scale: 0.97, transformOrigin: "bottom center" },
+
+//   visible: {
+
+//     opacity: 1,
+
+//     y: 0,
+
+//     scale: 1,
+
+//     transition: { type: "spring", stiffness: 400, damping: 28 },
+
+//   },
+
+//   exit: { opacity: 0, y: 8, scale: 0.97, transition: { duration: 0.15 } },
+
+// };
+
+
+
+// const emojiItemVariants = {
+
+//   hidden: { opacity: 0, scale: 0.7 },
+
+//   visible: (i) => ({
+
+//     opacity: 1,
+
+//     scale: 1,
+
+//     transition: { delay: i * 0.012, type: "spring", stiffness: 400, damping: 25 },
+
+//   }),
+
+//   hover: { scale: 1.2, transition: { duration: 0.15 } },
+
+//   tap: { scale: 0.9 },
+
+// };
+
+
+
+// const dropdownVariants = {
+
+//   hidden: { opacity: 0, y: -6, scale: 0.97, transformOrigin: "top right" },
+
+//   visible: {
+
+//     opacity: 1,
+
+//     y: 0,
+
+//     scale: 1,
+
+//     transition: { type: "spring", stiffness: 400, damping: 28 },
+
+//   },
+
+//   exit: { opacity: 0, y: -4, scale: 0.97, transition: { duration: 0.14 } },
+
+// };
+
+
+
+// const typingDotVariants = {
+
+//   initial: { y: 0, opacity: 0.4 },
+
+//   animate: (i) => ({
+
+//     y: [0, -4, 0],
+
+//     opacity: [0.4, 1, 0.4],
+
+//     transition: {
+
+//       duration: 1,
+
+//       repeat: Infinity,
+
+//       ease: "easeInOut",
+
+//       delay: i * 0.15,
+
+//     },
+
+//   }),
+
+// };
+
+
+
+// const fileChipVariants = {
+
+//   hidden: { opacity: 0, y: -6, height: 0, marginBottom: 0 },
+
+//   visible: {
+
+//     opacity: 1,
+
+//     y: 0,
+
+//     height: "auto",
+
+//     marginBottom: 8,
+
+//     transition: { type: "spring", stiffness: 400, damping: 30 },
+
+//   },
+
+//   exit: { opacity: 0, y: -6, height: 0, marginBottom: 0, transition: { duration: 0.15 } },
+
+// };
+
+
+
+// const statusDotVariants = {
+
+//   animate: {
+
+//     opacity: [1, 0.6, 1],
+
+//     transition: { duration: 2.5, repeat: Infinity, ease: "easeInOut" },
+
+//   },
+
+// };
+
+
+
+// // ⭐ Circular motion variant for the launcher
+
+// const launcherOrbitVariants = {
+
+//   animate: {
+
+//     rotate: 360,
+
+//     transition: {
+
+//       duration: 20,           // full circle in 20s — smooth, continuous
+
+//       repeat: Infinity,
+
+//       ease: "linear",
+
+//     },
+
+//   },
+
+// };
+
+
+
+// // ⭐ Counter-rotate so the icon stays upright inside the orbiting wrapper
+
+// const launcherIconCounterVariants = {
+
+//   animate: {
+
+//     rotate: -360,
+
+//     transition: {
+
+//       duration: 20,
+
+//       repeat: Infinity,
+
+//       ease: "linear",
+
+//     },
+
+//   },
+
+// };
+
+
+
+// // ============================================================
+
+// // LOGO
+
+// // ============================================================
+
+// function Logo({ src, size = 48, ring = true }) {
+
+//   const [failed, setFailed] = useState(false);
+
+//   return (
+
+//     <div
+
+//       className="relative shrink-0 overflow-hidden rounded-full bg-[#1a0d06]"
+
+//       style={{
+
+//         width: size,
+
+//         height: size,
+
+//         boxShadow: ring ? "0 0 0 2px rgba(255,255,255,0.35)" : undefined,
+
+//       }}
+
+//     >
+
+//       {!failed && src ? (
+
+//         <img
+
+//           src={src}
+
+//           alt="Jeeva"
+
+//           onError={() => setFailed(true)}
+
+//           className="h-full w-full object-cover"
+
+//           draggable={false}
+
+//         />
+
+//       ) : (
+
+//         <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-orange-500 to-red-700 text-white">
+
+//           <svg viewBox="0 0 24 24" width={size * 0.5} height={size * 0.5} fill="currentColor">
+
+//             <path d="M12 2s1 3.5-1.5 6C8 10.5 6 12.5 6 15.5A6 6 0 0 0 18 15c0-2-1-3.5-2-5 0 0-.5 2-2 2.5C15 9 12 2 12 2z" />
+
+//           </svg>
+
+//           <span style={{ fontSize: size * 0.18 }} className="-mt-0.5 font-extrabold tracking-wider">
+
+//             JEEVA
+
+//           </span>
+
+//         </div>
+
+//       )}
+
+//     </div>
+
+//   );
+
+// }
+
+
+
+// // ============================================================
+
+// // CHATBOT
+
+// // ============================================================
+
+// export default function ChatBot({
+
+//   logoSrc = DEFAULT_LOGO,
+
+//   agentName = "Jeeva",
+
+//   userInitials = "AB",
+
+//   defaultOpen = false,
+
+//   onSendMessage,
+
+// }) {
+
+//   const [open, setOpen] = useState(defaultOpen);
+
+//   const [messages, setMessages] = useState(INITIAL_MESSAGES);
+//   const [conversationId, setConversationId] = useState(DEFAULT_CONVERSATION_ID);
+
+//   const [input, setInput] = useState("");
+
+//   const [file, setFile] = useState(null);
+
+//   const [typing, setTyping] = useState(false);
+
+//   const [menuOpen, setMenuOpen] = useState(false);
+
+//   const [emojiOpen, setEmojiOpen] = useState(false);
+
+//   const [unread, setUnread] = useState(0);
+
+
+
+//   const endRef = useRef(null);
+
+//   const fileRef = useRef(null);
+
+//   const inputRef = useRef(null);
+
+
+
+//   useEffect(() => {
+
+//     if (open) endRef.current?.scrollIntoView({ behavior: "smooth" });
+
+//   }, [messages, typing, open]);
+
+
+
+//   useEffect(() => {
+
+//     if (open) {
+
+//       setUnread(0);
+
+//       window.setTimeout(() => inputRef.current?.focus(), 300);
+
+//     }
+
+//   }, [open]);
+
+
+
+//   useEffect(() => {
+
+//     const close = () => {
+
+//       setMenuOpen(false);
+
+//       setEmojiOpen(false);
+
+//     };
+
+//     window.addEventListener("click", close);
+
+//     return () => window.removeEventListener("click", close);
+
+//   }, []);
+
+
+
+//   const pushAgent = (text, name = "Jeeva") => {
+
+//     setMessages((prev) => [
+
+//       ...prev,
+
+//       { id: `a-${Date.now()}`, type: "message", from: "agent", name, text, time: nowTime() },
+
+//     ]);
+
+//     if (!open) setUnread((n) => n + 1);
+
+//   };
+
+
+
+//   const handleSend = async () => {
+//     const text = input.trim();
+//     if (!text && !file) return;
+
+//     // /chat accepts { conversation_id, message }; it does not upload files.
+//     if (!text && file) {
+//       pushAgent("File uploads are not supported by this chat API yet. Please type a message.", agentName);
+//       setFile(null);
+//       return;
+//     }
+
+//     const sentFile = file;
+//     setMessages((prev) => [
+//       ...prev,
+//       {
+//         id: `u-${Date.now()}`,
+//         type: "message",
+//         from: "user",
+//         text,
+//         fileName: sentFile?.name,
+//         time: nowTime(),
+//       },
+//     ]);
+
+//     setInput("");
+//     setFile(null);
+//     setEmojiOpen(false);
+//     setTyping(true);
+
+//     try {
+//       if (onSendMessage) {
+//         const reply = await onSendMessage(text, sentFile);
+//         if (reply) {
+//           if (typeof reply === "string") pushAgent(reply, agentName);
+//           else pushAgent(reply.text || reply.content || "", reply.name || agentName);
+//         }
+//         return;
+//       }
+
+//       const token =
+//         localStorage.getItem("access_token") ||
+//         localStorage.getItem("accessToken");
+
+//       const response = await axios.post(
+//         `${config.BASE_URL}/chat`,
+//         { conversation_id: conversationId, message: text },
+//         {
+//           headers: {
+//             Accept: "application/json",
+//             "Content-Type": "application/json",
+//             ...(token ? { Authorization: `Bearer ${token.trim()}` } : {}),
+//           },
+//         }
+//       );
+
+//       const data = response?.data;
+//       if (data?.conversation_id) setConversationId(data.conversation_id);
+
+//       if (Array.isArray(data?.messages)) {
+//         setMessages(mapApiMessages(data.messages, agentName));
+//       } else {
+//         const replyText = data?.message || data?.reply || data?.response;
+//         if (typeof replyText === "string" && replyText.trim()) {
+//           pushAgent(replyText, agentName);
+//         }
+//       }
+//     } catch (err) {
+//       console.error("Chat API Error:", err?.response?.data || err);
+//       const status = err?.response?.status;
+//       const detail = err?.response?.data?.detail || err?.response?.data?.message;
+//       const errorMessage = status === 401
+//         ? "Your session has expired. Please log in again and retry."
+//         : typeof detail === "string"
+//           ? detail
+//           : "Sorry, I couldn't send your message. Please try again.";
+//       pushAgent(errorMessage, agentName);
+//     } finally {
+//       setTyping(false);
+//     }
+//   };
+
+//   const handleKeyDown = (e) => {
+
+//     if (e.key === "Enter" && !e.shiftKey) {
+
+//       e.preventDefault();
+
+//       handleSend();
+
+//     }
+
+//   };
+
+
+
+//   const clearChat = (newConversation = false) => {
+//     setMessages([]);
+//     if (newConversation) setConversationId(createConversationId());
+//     setMenuOpen(false);
+//   };
+
+
+
+//   const canSend = input.trim().length > 0 || !!file;
+
+
+
+//   return (
+
+//     <div className="fixed bottom-3 right-5 z-[250] flex flex-col items-end gap-3 font-sans">
+
+//       <AnimatePresence mode="wait">
+
+//         {open && (
+
+//           <motion.div
+
+//             key="chat-window"
+
+//             variants={chatWindowVariants}
+
+//             initial="hidden"
+
+//             animate="visible"
+
+//             exit="exit"
+
+//             style={{ transformOrigin: "bottom right" }}
+
+//             className="flex h-[min(670px,calc(90vh-6rem))] w-[410px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] dark:border-white/10 dark:bg-[#121214]"
+
+//           >
+
+//             {/* HEADER */}
+
+//             <div className="relative flex items-center gap-3 bg-gradient-to-r from-orange-600 to-orange-500 px-5 py-4 text-white">
+
+//               <div className="relative">
+
+//                 <Logo src={logoSrc} size={46} />
+
+//                 <motion.span
+
+//                   variants={statusDotVariants}
+
+//                   animate="animate"
+
+//                   className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-orange-500 bg-emerald-400"
+
+//                 />
+
+//               </div>
+
+
+
+//               <div className="min-w-0 flex-1">
+
+//                 <p className="truncate text-[16px] font-semibold leading-tight">{agentName}</p>
+
+//                 <p className="text-[12.5px] text-white/90">Online now</p>
+
+//               </div>
+
+
+
+//               <div className="relative" onClick={(e) => e.stopPropagation()}>
+
+//                 <motion.button
+
+//                   type="button"
+
+//                   aria-label="More options"
+
+//                   onClick={() => {
+
+//                     setMenuOpen((v) => !v);
+
+//                     setEmojiOpen(false);
+
+//                   }}
+
+//                   whileHover={{ scale: 1.06 }}
+
+//                   whileTap={{ scale: 0.94 }}
+
+//                   transition={{ type: "spring", stiffness: 400, damping: 22 }}
+
+//                   className="rounded-full p-2 transition hover:bg-white/15"
+
+//                 >
+
+//                   <MoreVertical size={19} />
+
+//                 </motion.button>
+
+
+
+//                 <AnimatePresence>
+
+//                   {menuOpen && (
+
+//                     <motion.div
+
+//                       variants={dropdownVariants}
+
+//                       initial="hidden"
+
+//                       animate="visible"
+
+//                       exit="exit"
+
+//                       className="absolute right-0 top-full z-10 mt-2 w-56 overflow-hidden rounded-xl border border-black/5 bg-white py-1 text-sm text-zinc-700 shadow-xl dark:border-white/10 dark:bg-[#1a1a1d] dark:text-zinc-200"
+
+//                     >
+
+//                       <motion.button
+
+//                         type="button"
+
+//                         whileHover={{ backgroundColor: "rgba(0,0,0,0.03)" }}
+
+//                         onClick={() => clearChat(true)}
+
+//                         className="flex w-full items-center gap-2 px-4 py-2.5 dark:hover:bg-white/5"
+
+//                       >
+
+//                         <MessageSquarePlus size={15} /> Start new conversation
+
+//                       </motion.button>
+
+//                       <motion.button
+
+//                         type="button"
+
+//                         whileHover={{ backgroundColor: "rgba(239,68,68,0.06)" }}
+
+//                         onClick={() => clearChat(false)}
+
+//                         className="flex w-full items-center gap-2 px-4 py-2.5 text-red-500"
+
+//                       >
+
+//                         <Trash2 size={15} /> Clear chat
+
+//                       </motion.button>
+
+//                     </motion.div>
+
+//                   )}
+
+//                 </AnimatePresence>
+
+//               </div>
+
+
+
+//               <motion.button
+
+//                 type="button"
+
+//                 aria-label="Close chat"
+
+//                 onClick={() => setOpen(false)}
+
+//                 whileHover={{ scale: 1.06 }}
+
+//                 whileTap={{ scale: 0.94 }}
+
+//                 transition={{ type: "spring", stiffness: 400, damping: 22 }}
+
+//                 className="rounded-full p-2 transition hover:bg-white/15"
+
+//               >
+
+//                 <X size={20} />
+
+//               </motion.button>
+
+//             </div>
+
+
+
+//             {/* MESSAGES AREA */}
+
+//             <div className="flex-1 space-y-4 overflow-y-auto bg-white px-5 py-5 dark:bg-[#0e0e10]">
+
+//               {messages.length === 0 && (
+
+//                 <motion.p
+
+//                   initial={{ opacity: 0 }}
+
+//                   animate={{ opacity: 1 }}
+
+//                   className="mt-16 text-center text-sm text-zinc-400"
+
+//                 >
+
+//                   No messages yet. Say hello 👋
+
+//                 </motion.p>
+
+//               )}
+
+
+
+//               <AnimatePresence initial={false}>
+
+//                 {messages.map((m) => {
+
+//                   if (m.type === "date") {
+
+//                     return (
+
+//                       <motion.div
+
+//                         key={m.id}
+
+//                         initial={{ opacity: 0 }}
+
+//                         animate={{ opacity: 1 }}
+
+//                         className="flex items-center gap-3 py-1"
+
+//                       >
+
+//                         <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
+
+//                         <span className="text-[12px] text-zinc-400">{m.label}</span>
+
+//                         <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
+
+//                       </motion.div>
+
+//                     );
+
+//                   }
+
+
+
+//                   if (m.type === "system") {
+
+//                     return (
+
+//                       <motion.div
+
+//                         key={m.id}
+
+//                         initial={{ opacity: 0, y: 6 }}
+
+//                         animate={{ opacity: 1, y: 0 }}
+
+//                         className="flex justify-center"
+
+//                       >
+
+//                         <span className="rounded-full bg-zinc-200/70 px-4 py-1.5 text-[12.5px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400">
+
+//                           {m.text}
+
+//                         </span>
+
+//                       </motion.div>
+
+//                     );
+
+//                   }
+
+
+
+//                   const isUser = m.from === "user";
+
+
+
+//                   return (
+
+//                     <motion.div
+
+//                       key={m.id}
+
+//                       layout
+
+//                       variants={messageVariants}
+
+//                       initial="hidden"
+
+//                       animate="visible"
+
+//                       custom={isUser}
+
+//                       className={`flex items-start gap-2 ${
+
+//                         isUser ? "justify-end" : "justify-start"
+
+//                       }`}
+
+//                     >
+
+//                       {!isUser && (
+
+//                         <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[12px] font-semibold text-white dark:bg-zinc-700">
+
+//                           {(m.name || "J").charAt(0)}
+
+//                         </div>
+
+//                       )}
+
+
+
+//                       <div className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}>
+
+//                         <motion.div
+
+//                           whileHover={{ scale: 1.015 }}
+
+//                           transition={{ duration: 0.15 }}
+
+//                           className={`rounded-[20px] px-4 py-2.5 text-[14px] leading-snug shadow-sm ${
+
+//                             isUser
+
+//                               ? "bg-[#e67e22] text-white"
+
+//                               : "border border-zinc-200 bg-white text-zinc-800 dark:border-white/10 dark:bg-[#18181b] dark:text-zinc-100"
+
+//                           }`}
+
+//                         >
+
+//                           {m.fileName && (
+
+//                             <div className="mb-1 flex items-center gap-1.5 text-[12px] text-white/85">
+
+//                               <FileText size={13} />
+
+//                               <span className="max-w-[200px] truncate">{m.fileName}</span>
+
+//                             </div>
+
+//                           )}
+
+//                           {m.text}
+
+//                         </motion.div>
+
+//                         <span className="mt-1.5 text-[11px] text-zinc-400">{m.time}</span>
+
+//                       </div>
+
+
+
+//                       {isUser && (
+
+//                         <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e67e22] text-[11px] font-semibold text-white">
+
+//                           {userInitials}
+
+//                         </div>
+
+//                       )}
+
+//                     </motion.div>
+
+//                   );
+
+//                 })}
+
+//               </AnimatePresence>
+
+
+
+//               <AnimatePresence>
+
+//                 {typing && (
+
+//                   <motion.div
+
+//                     initial={{ opacity: 0, y: 6 }}
+
+//                     animate={{ opacity: 1, y: 0 }}
+
+//                     exit={{ opacity: 0, y: 6 }}
+
+//                     className="flex items-end gap-2"
+
+//                   >
+
+//                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[12px] font-semibold text-white">
+
+//                       J
+
+//                     </div>
+
+//                     <div className="flex items-center gap-1 rounded-[20px] border border-zinc-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-[#18181b]">
+
+//                       {[0, 1, 2].map((i) => (
+
+//                         <motion.span
+
+//                           key={i}
+
+//                           custom={i}
+
+//                           variants={typingDotVariants}
+
+//                           initial="initial"
+
+//                           animate="animate"
+
+//                           className="h-1.5 w-1.5 rounded-full bg-zinc-400"
+
+//                         />
+
+//                       ))}
+
+//                     </div>
+
+//                   </motion.div>
+
+//                 )}
+
+//               </AnimatePresence>
+
+
+
+//               <div ref={endRef} />
+
+//             </div>
+
+
+
+//             {/* FOOTER */}
+
+//             <div className="relative border-t border-zinc-100 bg-white px-4 pb-3 pt-3 dark:border-white/10 dark:bg-[#121214]">
+
+//               <AnimatePresence>
+
+//                 {file && (
+
+//                   <motion.div
+
+//                     variants={fileChipVariants}
+
+//                     initial="hidden"
+
+//                     animate="visible"
+
+//                     exit="exit"
+
+//                     className="flex items-center gap-2 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs text-zinc-600 dark:border-white/10 dark:bg-white/5 dark:text-zinc-300"
+
+//                   >
+
+//                     <FileText size={13} />
+
+//                     <span className="flex-1 truncate">{file.name}</span>
+
+//                     <motion.button
+
+//                       whileHover={{ scale: 1.15 }}
+
+//                       whileTap={{ scale: 0.9 }}
+
+//                       type="button"
+
+//                       onClick={() => setFile(null)}
+
+//                       aria-label="Remove file"
+
+//                     >
+
+//                       <X size={13} />
+
+//                     </motion.button>
+
+//                   </motion.div>
+
+//                 )}
+
+//               </AnimatePresence>
+
+
+
+//               <AnimatePresence>
+
+//                 {emojiOpen && (
+
+//                   <motion.div
+
+//                     variants={emojiTrayVariants}
+
+//                     initial="hidden"
+
+//                     animate="visible"
+
+//                     exit="exit"
+
+//                     onClick={(e) => e.stopPropagation()}
+
+//                     className="absolute bottom-full left-4 right-4 mb-2 grid grid-cols-10 gap-1 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl dark:border-white/10 dark:bg-[#1a1a1d]"
+
+//                   >
+
+//                     {EMOJIS.map((emoji, i) => (
+
+//                       <motion.button
+
+//                         key={emoji}
+
+//                         custom={i}
+
+//                         variants={emojiItemVariants}
+
+//                         initial="hidden"
+
+//                         animate="visible"
+
+//                         whileHover="hover"
+
+//                         whileTap="tap"
+
+//                         type="button"
+
+//                         onClick={() => {
+
+//                           setInput((v) => v + emoji);
+
+//                           inputRef.current?.focus();
+
+//                         }}
+
+//                         className="rounded-md p-1.5 text-lg transition hover:bg-zinc-100 dark:hover:bg-white/10"
+
+//                       >
+
+//                         {emoji}
+
+//                       </motion.button>
+
+//                     ))}
+
+//                   </motion.div>
+
+//                 )}
+
+//               </AnimatePresence>
+
+
+
+//               <div className="flex items-center gap-2">
+
+//                 <input
+
+//                   ref={fileRef}
+
+//                   type="file"
+
+//                   className="hidden"
+
+//                   onChange={(e) => {
+
+//                     setFile(e.target.files?.[0] || null);
+
+//                     e.target.value = "";
+
+//                   }}
+
+//                 />
+
+
+
+//                 <motion.button
+
+//                   type="button"
+
+//                   aria-label="Attach file"
+
+//                   onClick={() => fileRef.current?.click()}
+
+//                   whileHover={{ scale: 1.1 }}
+
+//                   whileTap={{ scale: 0.92 }}
+
+//                   className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-white/10"
+
+//                 >
+
+//                   <Paperclip size={19} />
+
+//                 </motion.button>
+
+
+
+//                 <input
+
+//                   ref={inputRef}
+
+//                   type="text"
+
+//                   value={input}
+
+//                   onChange={(e) => setInput(e.target.value)}
+
+//                   onKeyDown={handleKeyDown}
+
+//                   placeholder="Type a message..."
+
+//                   className="min-w-0 flex-1 bg-transparent px-1 py-2 text-[14px] text-zinc-800 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
+
+//                 />
+
+
+
+//                 <motion.button
+
+//                   type="button"
+
+//                   aria-label="Emoji"
+
+//                   onClick={(e) => {
+
+//                     e.stopPropagation();
+
+//                     setEmojiOpen((v) => !v);
+
+//                     setMenuOpen(false);
+
+//                   }}
+
+//                   whileHover={{ scale: 1.1 }}
+
+//                   whileTap={{ scale: 0.92 }}
+
+//                   className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-white/10"
+
+//                 >
+
+//                   <Smile size={19} />
+
+//                 </motion.button>
+
+
+
+//                 <motion.button
+
+//                   type="button"
+
+//                   aria-label="Send message"
+
+//                   onClick={handleSend}
+
+//                   disabled={!canSend || typing}
+
+//                   whileHover={canSend ? { scale: 1.06 } : {}}
+
+//                   whileTap={canSend ? { scale: 0.92 } : {}}
+
+//                   transition={{ type: "spring", stiffness: 450, damping: 22 }}
+
+//                   className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${
+
+//                     canSend && !typing
+
+//                       ? "bg-[#e67e22] text-white hover:bg-[#d35400]"
+
+//                       : "bg-zinc-100 text-zinc-400 dark:bg-white/10"
+
+//                   }`}
+
+//                 >
+
+//                   <Send size={17} />
+
+//                 </motion.button>
+
+//               </div>
+
+
+
+//               <p className="mt-2 text-center text-[11px] text-zinc-400">
+
+//                 Powered by <span className="font-semibold text-zinc-500">Ravan</span>
+
+//               </p>
+
+//             </div>
+
+//           </motion.div>
+
+//         )}
+
+//       </AnimatePresence>
+
+
+
+//     {/* ====================================================
+
+//     LAUNCHER BUTTON — SPINNER STYLE (गोल फिरणारा)
+
+// ==================================================== */}
+
+// <motion.button
+
+//   type="button"
+
+//   aria-label={open ? "Close chat" : "Open chat"}
+
+//   onClick={() => setOpen((v) => !v)}
+
+//   initial={{ scale: 0, opacity: 0 }}
+
+//   animate={{ scale: 1, opacity: 1 }}
+
+//   transition={{ type: "spring", stiffness: 300, damping: 24, delay: 0.2 }}
+
+//   whileHover={{ scale: 1.08 }}
+
+//   whileTap={{ scale: 0.94 }}
+
+//   className="relative h-[60px] w-[60px] rounded-full border-[3px] border-orange-500 bg-[#1a0d06] p-0 shadow-[0_8px_24px_rgba(234,88,12,0.4)]"
+
+// >
+
+//   {/* 🌀 SPINNER — logo सतत गोल फिरत राहील */}
+
+//   <motion.div
+
+//     className="flex h-full w-full items-center justify-center"
+
+//     animate={{ rotate: 360 }}
+
+//     transition={{
+
+//       duration: 3,        // ⬅️ 3 सेकंदात एक पूर्ण फेर — कमी कर = जास्त वेग
+
+//       repeat: Infinity,
+
+//       ease: "linear",
+
+//     }}
+
+//     style={{ transformOrigin: "center center" }}
+
+//   >
+
+//     <Logo src={logoSrc} size={54} ring={false} />
+
+//   </motion.div>
+
+
+
+//   <AnimatePresence>
+
+//     {unread > 0 && !open && (
+
+//       <motion.span
+
+//         initial={{ scale: 0 }}
+
+//         animate={{ scale: 1 }}
+
+//         exit={{ scale: 0 }}
+
+//         transition={{ type: "spring", stiffness: 500, damping: 22 }}
+
+//         className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white"
+
+//       >
+
+//         {unread}
+
+//       </motion.span>
+
+//     )}
+
+//   </AnimatePresence>
+
+// </motion.button>
+
+//     </div>
+
+//   );
+
+// }
+
+
 import React, { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import config from "../../config/Config";
 import { AnimatePresence, motion } from "framer-motion";
+
 import {
   X,
   MoreVertical,
@@ -14,6 +2104,7 @@ import {
 // ============================================================
 // CONFIG
 // ============================================================
+
 const DEFAULT_LOGO = "/jeeva-logo.png";
 
 const EMOJIS = [
@@ -21,18 +2112,32 @@ const EMOJIS = [
   "😍", "😎", "🤔", "😅", "🙌", "👏", "💡", "🚀", "✨", "🎯"
 ];
 
-const INITIAL_MESSAGES = [
-  { id: "d1", type: "date", label: "Today" },
-  { id: "m1", type: "message", from: "user", text: "I'd like to book a demo.", time: "12:23 PM" },
-  {
-    id: "m2",
+const INITIAL_MESSAGES = [];
+const DEFAULT_CONVERSATION_ID = "chat_6f713e1800be4ee4b51bc17b0c5ae40a";
+
+const createConversationId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return `chat_${crypto.randomUUID().replaceAll("-", "")}`;
+  }
+  return `chat_${Date.now()}${Math.random().toString(16).slice(2, 10)}`;
+};
+
+const formatMessageTime = (createdAt) => {
+  if (!createdAt) return nowTime();
+  const date = new Date(createdAt);
+  if (Number.isNaN(date.getTime())) return nowTime();
+  return date.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+};
+
+const mapApiMessages = (items, agentName) =>
+  (Array.isArray(items) ? items : []).map((item, index) => ({
+    id: `api-${index}-${item.created_at || index}`,
     type: "message",
-    from: "agent",
-    name: "Jeeva",
-    text: "Sure, please share your preferred date and time, and we'll schedule the call accordingly.",
-    time: "12:23 PM",
-  },
-];
+    from: item.role === "user" ? "user" : "agent",
+    name: item.role === "user" ? undefined : agentName,
+    text: typeof item.content === "string" ? item.content : "",
+    time: formatMessageTime(item.created_at),
+  }));
 
 const nowTime = () =>
   new Date().toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
@@ -40,99 +2145,113 @@ const nowTime = () =>
 // ============================================================
 // STANDARD ANIMATION VARIANTS
 // ============================================================
+
 const chatWindowVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.96 },
+  hidden: { opacity: 0, y: 30, scale: 0.9, rotateX: -8 },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: "spring", stiffness: 300, damping: 26 },
+    rotateX: 0,
+    transition: { type: "spring", stiffness: 280, damping: 24 },
   },
   exit: {
     opacity: 0,
-    y: 16,
-    scale: 0.97,
-    transition: { duration: 0.18, ease: "easeIn" },
+    y: 20,
+    scale: 0.94,
+    rotateX: -6,
+    transition: { duration: 0.2, ease: "easeIn" },
   },
 };
 
 const messageVariants = {
   hidden: (isUser) => ({
     opacity: 0,
-    x: isUser ? 16 : -16,
-    y: 8,
+    x: isUser ? 24 : -24,
+    y: 10,
+    scale: 0.95,
   }),
   visible: {
     opacity: 1,
     x: 0,
     y: 0,
-    transition: { type: "spring", stiffness: 400, damping: 28 },
+    scale: 1,
+    transition: { type: "spring", stiffness: 380, damping: 26 },
   },
 };
 
 const emojiTrayVariants = {
-  hidden: { opacity: 0, y: 10, scale: 0.97, transformOrigin: "bottom center" },
+  hidden: { opacity: 0, y: 16, scale: 0.94, transformOrigin: "bottom center" },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: "spring", stiffness: 400, damping: 28 },
+    transition: { type: "spring", stiffness: 380, damping: 26 },
   },
-  exit: { opacity: 0, y: 8, scale: 0.97, transition: { duration: 0.15 } },
+  exit: { opacity: 0, y: 12, scale: 0.94, transition: { duration: 0.15 } },
 };
 
 const emojiItemVariants = {
-  hidden: { opacity: 0, scale: 0.7 },
+  hidden: { opacity: 0, scale: 0.5, y: 8 },
   visible: (i) => ({
     opacity: 1,
     scale: 1,
-    transition: { delay: i * 0.012, type: "spring", stiffness: 400, damping: 25 },
+    y: 0,
+    transition: { delay: i * 0.014, type: "spring", stiffness: 400, damping: 22 },
   }),
-  hover: { scale: 1.2, transition: { duration: 0.15 } },
-  tap: { scale: 0.9 },
+  hover: { scale: 1.3, rotate: [0, -8, 8, 0], transition: { duration: 0.3 } },
+  tap: { scale: 0.85 },
 };
 
 const dropdownVariants = {
-  hidden: { opacity: 0, y: -6, scale: 0.97, transformOrigin: "top right" },
+  hidden: { opacity: 0, y: -8, scale: 0.94, transformOrigin: "top right" },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: "spring", stiffness: 400, damping: 28 },
+    transition: { type: "spring", stiffness: 380, damping: 26 },
   },
-  exit: { opacity: 0, y: -4, scale: 0.97, transition: { duration: 0.14 } },
+  exit: { opacity: 0, y: -6, scale: 0.94, transition: { duration: 0.14 } },
 };
 
 const typingDotVariants = {
-  initial: { y: 0, opacity: 0.4 },
+  initial: { y: 0, opacity: 0.4, scale: 1 },
   animate: (i) => ({
-    y: [0, -4, 0],
+    y: [0, -6, 0],
     opacity: [0.4, 1, 0.4],
+    scale: [1, 1.15, 1],
     transition: {
-      duration: 1,
+      duration: 0.9,
       repeat: Infinity,
       ease: "easeInOut",
-      delay: i * 0.15,
+      delay: i * 0.18,
     },
   }),
 };
 
 const fileChipVariants = {
-  hidden: { opacity: 0, y: -6, height: 0, marginBottom: 0 },
+  hidden: { opacity: 0, y: -8, height: 0, marginBottom: 0, scale: 0.95 },
   visible: {
     opacity: 1,
     y: 0,
     height: "auto",
     marginBottom: 8,
-    transition: { type: "spring", stiffness: 400, damping: 30 },
+    scale: 1,
+    transition: { type: "spring", stiffness: 380, damping: 28 },
   },
-  exit: { opacity: 0, y: -6, height: 0, marginBottom: 0, transition: { duration: 0.15 } },
+  exit: { opacity: 0, y: -8, height: 0, marginBottom: 0, scale: 0.95, transition: { duration: 0.15 } },
 };
 
 const statusDotVariants = {
   animate: {
-    opacity: [1, 0.6, 1],
-    transition: { duration: 2.5, repeat: Infinity, ease: "easeInOut" },
+    opacity: [1, 0.5, 1],
+    scale: [1, 1.3, 1],
+    boxShadow: [
+      "0 0 0 0 rgba(52,211,153,0.6)",
+      "0 0 0 6px rgba(52,211,153,0)",
+      "0 0 0 0 rgba(52,211,153,0)",
+    ],
+    transition: { duration: 2, repeat: Infinity, ease: "easeInOut" },
   },
 };
 
@@ -141,7 +2260,7 @@ const launcherOrbitVariants = {
   animate: {
     rotate: 360,
     transition: {
-      duration: 20,           // full circle in 20s — smooth, continuous
+      duration: 20,
       repeat: Infinity,
       ease: "linear",
     },
@@ -160,9 +2279,53 @@ const launcherIconCounterVariants = {
   },
 };
 
+// ⭐ Pulsing ring around the launcher
+const launcherPulseVariants = {
+  animate: {
+    scale: [1, 1.35, 1],
+    opacity: [0.6, 0, 0.6],
+    transition: { duration: 2.2, repeat: Infinity, ease: "easeOut" },
+  },
+};
+
+// ⭐ Floating particles around launcher
+const particleVariants = {
+  animate: (i) => ({
+    y: [0, -18, 0],
+    x: [0, i % 2 === 0 ? 6 : -6, 0],
+    opacity: [0, 1, 0],
+    scale: [0.4, 1, 0.4],
+    transition: {
+      duration: 2.4,
+      repeat: Infinity,
+      ease: "easeInOut",
+      delay: i * 0.4,
+    },
+  }),
+};
+
+// ⭐ Header shimmer
+const headerShimmerVariants = {
+  animate: {
+    backgroundPosition: ["0% 50%", "200% 50%"],
+    transition: { duration: 4, repeat: Infinity, ease: "linear" },
+  },
+};
+
+// ⭐ Send button burst
+const sendBurstVariants = {
+  hidden: { scale: 0, opacity: 0 },
+  visible: (i) => ({
+    scale: [0, 1.4, 0],
+    opacity: [0, 1, 0],
+    transition: { duration: 0.5, delay: i * 0.05 },
+  }),
+};
+
 // ============================================================
 // LOGO
 // ============================================================
+
 function Logo({ src, size = 48, ring = true }) {
   const [failed, setFailed] = useState(false);
   return (
@@ -199,6 +2362,7 @@ function Logo({ src, size = 48, ring = true }) {
 // ============================================================
 // CHATBOT
 // ============================================================
+
 export default function ChatBot({
   logoSrc = DEFAULT_LOGO,
   agentName = "Jeeva",
@@ -208,12 +2372,14 @@ export default function ChatBot({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [messages, setMessages] = useState(INITIAL_MESSAGES);
+  const [conversationId, setConversationId] = useState(DEFAULT_CONVERSATION_ID);
   const [input, setInput] = useState("");
   const [file, setFile] = useState(null);
   const [typing, setTyping] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [burst, setBurst] = useState(false);
 
   const endRef = useRef(null);
   const fileRef = useRef(null);
@@ -251,6 +2417,17 @@ export default function ChatBot({
     const text = input.trim();
     if (!text && !file) return;
 
+    if (!text && file) {
+      pushAgent("File uploads are not supported by this chat API yet. Please type a message.", agentName);
+      setFile(null);
+      return;
+    }
+
+    // burst animation on send
+    setBurst(true);
+    window.setTimeout(() => setBurst(false), 600);
+
+    const sentFile = file;
     setMessages((prev) => [
       ...prev,
       {
@@ -258,32 +2435,63 @@ export default function ChatBot({
         type: "message",
         from: "user",
         text,
-        fileName: file?.name,
+        fileName: sentFile?.name,
         time: nowTime(),
       },
     ]);
 
-    const sentFile = file;
     setInput("");
     setFile(null);
     setEmojiOpen(false);
     setTyping(true);
 
     try {
-      let reply;
       if (onSendMessage) {
-        reply = await onSendMessage(text, sentFile);
-      } else {
-        await new Promise((r) => setTimeout(r, 900));
-        reply = "Thanks for your message! Our team will get back to you shortly.";
+        const reply = await onSendMessage(text, sentFile);
+        if (reply) {
+          if (typeof reply === "string") pushAgent(reply, agentName);
+          else pushAgent(reply.text || reply.content || "", reply.name || agentName);
+        }
+        return;
       }
-      if (reply) {
-        if (typeof reply === "string") pushAgent(reply);
-        else pushAgent(reply.text, reply.name);
+
+      const token =
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("accessToken");
+
+      const response = await axios.post(
+        `${config.BASE_URL}/chat`,
+        { conversation_id: conversationId, message: text },
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token.trim()}` } : {}),
+          },
+        }
+      );
+
+      const data = response?.data;
+      if (data?.conversation_id) setConversationId(data.conversation_id);
+
+      if (Array.isArray(data?.messages)) {
+        setMessages(mapApiMessages(data.messages, agentName));
+      } else {
+        const replyText = data?.message || data?.reply || data?.response;
+        if (typeof replyText === "string" && replyText.trim()) {
+          pushAgent(replyText, agentName);
+        }
       }
     } catch (err) {
-      console.error("Chat error:", err);
-      pushAgent("Sorry, something went wrong. Please try again.");
+      console.error("Chat API Error:", err?.response?.data || err);
+      const status = err?.response?.status;
+      const detail = err?.response?.data?.detail || err?.response?.data?.message;
+      const errorMessage = status === 401
+        ? "Your session has expired. Please log in again and retry."
+        : typeof detail === "string"
+          ? detail
+          : "Sorry, I couldn't send your message. Please try again.";
+      pushAgent(errorMessage, agentName);
     } finally {
       setTyping(false);
     }
@@ -296,8 +2504,9 @@ export default function ChatBot({
     }
   };
 
-  const clearChat = () => {
+  const clearChat = (newConversation = false) => {
     setMessages([]);
+    if (newConversation) setConversationId(createConversationId());
     setMenuOpen(false);
   };
 
@@ -313,12 +2522,20 @@ export default function ChatBot({
             initial="hidden"
             animate="visible"
             exit="exit"
-            style={{ transformOrigin: "bottom right" }}
+            style={{ transformOrigin: "bottom right", perspective: 1000 }}
             className="flex h-[min(670px,calc(90vh-6rem))] w-[410px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-black/5 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.3)] dark:border-white/10 dark:bg-[#121214]"
           >
             {/* HEADER */}
-            <div className="relative flex items-center gap-3 bg-gradient-to-r from-orange-600 to-orange-500 px-5 py-4 text-white">
-              <div className="relative">
+            <div className="relative flex items-center gap-3 overflow-hidden bg-gradient-to-r from-orange-600 via-orange-500 to-orange-600 bg-[length:200%_100%] px-5 py-4 text-white">
+              {/* shimmer overlay */}
+              <motion.div
+                variants={headerShimmerVariants}
+                animate="animate"
+                className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                style={{ backgroundSize: "200% 100%" }}
+              />
+
+              <div className="relative z-10">
                 <Logo src={logoSrc} size={46} />
                 <motion.span
                   variants={statusDotVariants}
@@ -327,12 +2544,26 @@ export default function ChatBot({
                 />
               </div>
 
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[16px] font-semibold leading-tight">{agentName}</p>
-                <p className="text-[12.5px] text-white/90">Online now</p>
+              <div className="relative z-10 min-w-0 flex-1">
+                <motion.p
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="truncate text-[16px] font-semibold leading-tight"
+                >
+                  {agentName}
+                </motion.p>
+                <motion.p
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.18 }}
+                  className="text-[12.5px] text-white/90"
+                >
+                  Online now
+                </motion.p>
               </div>
 
-              <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <div className="relative z-10" onClick={(e) => e.stopPropagation()}>
                 <motion.button
                   type="button"
                   aria-label="More options"
@@ -340,9 +2571,9 @@ export default function ChatBot({
                     setMenuOpen((v) => !v);
                     setEmojiOpen(false);
                   }}
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 22 }}
+                  whileHover={{ scale: 1.12, rotate: 90 }}
+                  whileTap={{ scale: 0.92 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
                   className="rounded-full p-2 transition hover:bg-white/15"
                 >
                   <MoreVertical size={19} />
@@ -359,16 +2590,16 @@ export default function ChatBot({
                     >
                       <motion.button
                         type="button"
-                        whileHover={{ backgroundColor: "rgba(0,0,0,0.03)" }}
-                        onClick={clearChat}
+                        whileHover={{ x: 4, backgroundColor: "rgba(0,0,0,0.03)" }}
+                        onClick={() => clearChat(true)}
                         className="flex w-full items-center gap-2 px-4 py-2.5 dark:hover:bg-white/5"
                       >
                         <MessageSquarePlus size={15} /> Start new conversation
                       </motion.button>
                       <motion.button
                         type="button"
-                        whileHover={{ backgroundColor: "rgba(239,68,68,0.06)" }}
-                        onClick={clearChat}
+                        whileHover={{ x: 4, backgroundColor: "rgba(239,68,68,0.06)" }}
+                        onClick={() => clearChat(false)}
                         className="flex w-full items-center gap-2 px-4 py-2.5 text-red-500"
                       >
                         <Trash2 size={15} /> Clear chat
@@ -382,10 +2613,10 @@ export default function ChatBot({
                 type="button"
                 aria-label="Close chat"
                 onClick={() => setOpen(false)}
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.94 }}
-                transition={{ type: "spring", stiffness: 400, damping: 22 }}
-                className="rounded-full p-2 transition hover:bg-white/15"
+                whileHover={{ scale: 1.12, rotate: 90 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                className="relative z-10 rounded-full p-2 transition hover:bg-white/15"
               >
                 <X size={20} />
               </motion.button>
@@ -394,13 +2625,26 @@ export default function ChatBot({
             {/* MESSAGES AREA */}
             <div className="flex-1 space-y-4 overflow-y-auto bg-white px-5 py-5 dark:bg-[#0e0e10]">
               {messages.length === 0 && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-16 text-center text-sm text-zinc-400"
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-16 flex flex-col items-center gap-3 text-center"
                 >
-                  No messages yet. Say hello 👋
-                </motion.p>
+                  <motion.div
+                    animate={{
+                      y: [0, -8, 0],
+                      rotate: [0, 6, -6, 0],
+                    }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    className="text-3xl"
+                  >
+                    👋
+                  </motion.div>
+                  <p className="text-sm text-zinc-400">
+                    No messages yet. Say hello!
+                  </p>
+                </motion.div>
               )}
 
               <AnimatePresence initial={false}>
@@ -409,8 +2653,8 @@ export default function ChatBot({
                     return (
                       <motion.div
                         key={m.id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        initial={{ opacity: 0, scaleX: 0.6 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
                         className="flex items-center gap-3 py-1"
                       >
                         <div className="h-px flex-1 bg-zinc-200 dark:bg-white/10" />
@@ -424,8 +2668,8 @@ export default function ChatBot({
                     return (
                       <motion.div
                         key={m.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: 8, scale: 0.94 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
                         className="flex justify-center"
                       >
                         <span className="rounded-full bg-zinc-200/70 px-4 py-1.5 text-[12.5px] text-zinc-500 dark:bg-white/10 dark:text-zinc-400">
@@ -450,18 +2694,23 @@ export default function ChatBot({
                       }`}
                     >
                       {!isUser && (
-                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[12px] font-semibold text-white dark:bg-zinc-700">
+                        <motion.div
+                          initial={{ scale: 0, rotate: -180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.05 }}
+                          className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 text-[12px] font-semibold text-white dark:from-zinc-600 dark:to-zinc-800"
+                        >
                           {(m.name || "J").charAt(0)}
-                        </div>
+                        </motion.div>
                       )}
 
                       <div className={`flex max-w-[78%] flex-col ${isUser ? "items-end" : "items-start"}`}>
                         <motion.div
-                          whileHover={{ scale: 1.015 }}
+                          whileHover={{ scale: 1.02, y: -1 }}
                           transition={{ duration: 0.15 }}
                           className={`rounded-[20px] px-4 py-2.5 text-[14px] leading-snug shadow-sm ${
                             isUser
-                              ? "bg-[#e67e22] text-white"
+                              ? "bg-gradient-to-br from-[#e67e22] to-[#d35400] text-white"
                               : "border border-zinc-200 bg-white text-zinc-800 dark:border-white/10 dark:bg-[#18181b] dark:text-zinc-100"
                           }`}
                         >
@@ -473,13 +2722,25 @@ export default function ChatBot({
                           )}
                           {m.text}
                         </motion.div>
-                        <span className="mt-1.5 text-[11px] text-zinc-400">{m.time}</span>
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.15 }}
+                          className="mt-1.5 text-[11px] text-zinc-400"
+                        >
+                          {m.time}
+                        </motion.span>
                       </div>
 
                       {isUser && (
-                        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e67e22] text-[11px] font-semibold text-white">
+                        <motion.div
+                          initial={{ scale: 0, rotate: 180 }}
+                          animate={{ scale: 1, rotate: 0 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 20, delay: 0.05 }}
+                          className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#e67e22] to-[#d35400] text-[11px] font-semibold text-white"
+                        >
                           {userInitials}
-                        </div>
+                        </motion.div>
                       )}
                     </motion.div>
                   );
@@ -489,14 +2750,25 @@ export default function ChatBot({
               <AnimatePresence>
                 {typing && (
                   <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 6 }}
+                    initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.9 }}
                     className="flex items-end gap-2"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[12px] font-semibold text-white">
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.08, 1],
+                        boxShadow: [
+                          "0 0 0 0 rgba(249,115,22,0.4)",
+                          "0 0 0 6px rgba(249,115,22,0)",
+                          "0 0 0 0 rgba(249,115,22,0)",
+                        ],
+                      }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-zinc-700 to-zinc-900 text-[12px] font-semibold text-white"
+                    >
                       J
-                    </div>
+                    </motion.div>
                     <div className="flex items-center gap-1 rounded-[20px] border border-zinc-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-[#18181b]">
                       {[0, 1, 2].map((i) => (
                         <motion.span
@@ -505,7 +2777,7 @@ export default function ChatBot({
                           variants={typingDotVariants}
                           initial="initial"
                           animate="animate"
-                          className="h-1.5 w-1.5 rounded-full bg-zinc-400"
+                          className="h-1.5 w-1.5 rounded-full bg-orange-400"
                         />
                       ))}
                     </div>
@@ -530,7 +2802,7 @@ export default function ChatBot({
                     <FileText size={13} />
                     <span className="flex-1 truncate">{file.name}</span>
                     <motion.button
-                      whileHover={{ scale: 1.15 }}
+                      whileHover={{ scale: 1.2, rotate: 90 }}
                       whileTap={{ scale: 0.9 }}
                       type="button"
                       onClick={() => setFile(null)}
@@ -590,8 +2862,9 @@ export default function ChatBot({
                   type="button"
                   aria-label="Attach file"
                   onClick={() => fileRef.current?.click()}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.92 }}
+                  whileHover={{ scale: 1.15, rotate: -15 }}
+                  whileTap={{ scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 18 }}
                   className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-white/10"
                 >
                   <Paperclip size={19} />
@@ -615,81 +2888,168 @@ export default function ChatBot({
                     setEmojiOpen((v) => !v);
                     setMenuOpen(false);
                   }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.92 }}
+                  whileHover={{ scale: 1.15, rotate: 15 }}
+                  whileTap={{ scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 18 }}
                   className="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-white/10"
                 >
                   <Smile size={19} />
                 </motion.button>
 
-                <motion.button
-                  type="button"
-                  aria-label="Send message"
-                  onClick={handleSend}
-                  disabled={!canSend || typing}
-                  whileHover={canSend ? { scale: 1.06 } : {}}
-                  whileTap={canSend ? { scale: 0.92 } : {}}
-                  transition={{ type: "spring", stiffness: 450, damping: 22 }}
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${
-                    canSend && !typing
-                      ? "bg-[#e67e22] text-white hover:bg-[#d35400]"
-                      : "bg-zinc-100 text-zinc-400 dark:bg-white/10"
-                  }`}
-                >
-                  <Send size={17} />
-                </motion.button>
+                <div className="relative">
+                  <motion.button
+                    type="button"
+                    aria-label="Send message"
+                    onClick={handleSend}
+                    disabled={!canSend || typing}
+                    whileHover={canSend ? { scale: 1.08, rotate: -8 } : {}}
+                    whileTap={canSend ? { scale: 0.9 } : {}}
+                    animate={canSend && !typing ? {
+                      boxShadow: [
+                        "0 0 0 0 rgba(230,126,34,0.5)",
+                        "0 0 0 8px rgba(230,126,34,0)",
+                        "0 0 0 0 rgba(230,126,34,0)",
+                      ],
+                    } : {}}
+                    transition={{
+                      type: "spring",
+                      stiffness: 450,
+                      damping: 22,
+                      boxShadow: { duration: 1.8, repeat: Infinity },
+                    }}
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${
+                      canSend && !typing
+                        ? "bg-gradient-to-br from-[#e67e22] to-[#d35400] text-white"
+                        : "bg-zinc-100 text-zinc-400 dark:bg-white/10"
+                    }`}
+                  >
+                    <Send size={17} />
+                  </motion.button>
+
+                  {/* send burst particles */}
+                  <AnimatePresence>
+                    {burst && (
+                      <>
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <motion.span
+                            key={i}
+                            custom={i}
+                            variants={sendBurstVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="hidden"
+                            className="pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full bg-orange-400"
+                            style={{
+                              transform: `translate(-50%, -50%) rotate(${i * 60}deg) translateY(-18px)`,
+                            }}
+                          />
+                        ))}
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
-              <p className="mt-2 text-center text-[11px] text-zinc-400">
-                Powered by <span className="font-semibold text-zinc-500">Ravan</span>
-              </p>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="mt-2 text-center text-[11px] text-zinc-400"
+              >
+                Powered by{" "}
+                <motion.span
+                  animate={{ opacity: [1, 0.6, 1] }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
+                  className="font-semibold text-zinc-500"
+                >
+                  Ravan
+                </motion.span>
+              </motion.p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-    {/* ====================================================
-    LAUNCHER BUTTON — SPINNER STYLE (गोल फिरणारा)
-==================================================== */}
-<motion.button
-  type="button"
-  aria-label={open ? "Close chat" : "Open chat"}
-  onClick={() => setOpen((v) => !v)}
-  initial={{ scale: 0, opacity: 0 }}
-  animate={{ scale: 1, opacity: 1 }}
-  transition={{ type: "spring", stiffness: 300, damping: 24, delay: 0.2 }}
-  whileHover={{ scale: 1.08 }}
-  whileTap={{ scale: 0.94 }}
-  className="relative h-[60px] w-[60px] rounded-full border-[3px] border-orange-500 bg-[#1a0d06] p-0 shadow-[0_8px_24px_rgba(234,88,12,0.4)]"
->
-  {/* 🌀 SPINNER — logo सतत गोल फिरत राहील */}
-  <motion.div
-    className="flex h-full w-full items-center justify-center"
-    animate={{ rotate: 360 }}
-    transition={{
-      duration: 3,        // ⬅️ 3 सेकंदात एक पूर्ण फेर — कमी कर = जास्त वेग
-      repeat: Infinity,
-      ease: "linear",
-    }}
-    style={{ transformOrigin: "center center" }}
-  >
-    <Logo src={logoSrc} size={54} ring={false} />
-  </motion.div>
+      {/* ====================================================
+          LAUNCHER BUTTON — SPINNER STYLE with particles + pulse
+      ==================================================== */}
+      <div className="relative">
+        {/* pulsing ring */}
+        <motion.span
+          variants={launcherPulseVariants}
+          animate="animate"
+          className="pointer-events-none absolute inset-0 rounded-full border-2 border-orange-400"
+        />
 
-  <AnimatePresence>
-    {unread > 0 && !open && (
-      <motion.span
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0 }}
-        transition={{ type: "spring", stiffness: 500, damping: 22 }}
-        className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white"
-      >
-        {unread}
-      </motion.span>
-    )}
-  </AnimatePresence>
-</motion.button>
+        {/* floating particles around launcher */}
+        {[0, 1, 2, 3].map((i) => (
+          <motion.span
+            key={i}
+            custom={i}
+            variants={particleVariants}
+            animate="animate"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full bg-orange-400"
+            style={{
+              transform: `translate(-50%, -50%) rotate(${i * 90}deg) translateY(-38px)`,
+            }}
+          />
+        ))}
+
+        <motion.button
+          type="button"
+          aria-label={open ? "Close chat" : "Open chat"}
+          onClick={() => setOpen((v) => !v)}
+          initial={{ scale: 0, opacity: 0, rotate: -180 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 22, delay: 0.2 }}
+          whileHover={{ scale: 1.12 }}
+          whileTap={{ scale: 0.9 }}
+          className="relative h-[60px] w-[60px] rounded-full border-[3px] border-orange-500 bg-[#1a0d06] p-0 shadow-[0_8px_24px_rgba(234,88,12,0.4)]"
+        >
+          {/* spinning logo */}
+          <motion.div
+            className="flex h-full w-full items-center justify-center"
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            style={{ transformOrigin: "center center" }}
+          >
+            <Logo src={logoSrc} size={54} ring={false} />
+          </motion.div>
+
+          {/* subtle glow ring */}
+          <motion.span
+            animate={{
+              opacity: [0.4, 0.9, 0.4],
+              scale: [1, 1.05, 1],
+            }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            className="pointer-events-none absolute inset-[-4px] rounded-full border-2 border-orange-400/60"
+          />
+
+          <AnimatePresence>
+            {unread > 0 && !open && (
+              <motion.span
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 180 }}
+                transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white shadow-lg"
+              >
+                <motion.span
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                >
+                  {unread}
+                </motion.span>
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </div>
     </div>
   );
 }
