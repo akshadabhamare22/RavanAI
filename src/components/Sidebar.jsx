@@ -1667,7 +1667,7 @@ export default function Sidebar({
           >
             <img
               src="/logo.svg"
-              alt="Agni"
+              alt="JEEVA"
               className="h-full w-full object-cover"
               onError={(event) => {
                 event.currentTarget.style.display = "none";
@@ -1702,10 +1702,10 @@ export default function Sidebar({
                 className="min-w-0 flex-1 overflow-hidden"
               >
                 <h2 className="truncate text-[15px] font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                  Agni
+                  JEEVA
                 </h2>
                 <p className="mt-0.5 truncate text-[10px] font-semibold tracking-[0.1em] text-zinc-500">
-                  ENTERPRISE
+                  
                 </p>
               </motion.div>
             )}
