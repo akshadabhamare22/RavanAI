@@ -488,10 +488,69 @@
 
 import React, { useState } from "react";
 import axios from "axios";
-import { Eye, EyeOff, ArrowRight, Loader2, Info } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Loader2,
+  Info,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import config from "../../config/Config";
+
+// =========================================================
+// API Error Handler
+// =========================================================
+const getApiError = (error) => {
+  const data = error?.response?.data;
+
+  if (Array.isArray(data?.detail)) {
+    return data.detail
+      .map((item) => {
+        const field = item?.loc?.filter(
+          (part) => part !== "body"
+        ).join(".");
+
+        return field
+          ? `${field}: ${item?.msg || "Invalid value"}`
+          : item?.msg;
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (typeof data?.detail === "string") {
+    return data.detail;
+  }
+
+  if (typeof data?.message === "string") {
+    return data.message;
+  }
+
+  if (typeof data?.error === "string") {
+    return data.error;
+  }
+
+  if (error?.code === "ERR_NETWORK") {
+    return "Cannot connect to the server. Check that the backend is running and the API URL is correct.";
+  }
+
+  return error?.message || "Unable to register. Please try again.";
+};
+
+// =========================================================
+// Referral Enum Mapping - Exact Backend Values
+// =========================================================
+const referralMap = {
+  google: "google_search",
+  social: "social_media",
+  linkedin: "linkedin",
+  friend: "friend_or_colleague",
+  blog: "blog_or_article",
+  event: "event_or_webinar",
+  other: "other",
+};
 
 const Register = () => {
   const navigate = useNavigate();
@@ -512,185 +571,178 @@ const Register = () => {
     referral: "",
   });
 
+  // =========================================================
+  // Input Handler
+  // =========================================================
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
     setFormData((previous) => ({
       ...previous,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+
     setError("");
   };
 
-  // ---------------------------------------------------------
+  // =========================================================
   // Google Signup
-  // ---------------------------------------------------------
+  // Google OAuth is not configured yet.
+  // =========================================================
   const handleGoogleSignup = () => {
-    setIsGoogleLoading(true);
-    setError("");
-
-    const GOOGLE_CLIENT_ID =
-      "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
-
-    const REDIRECT_URI = `${window.location.origin}/auth/google/callback`;
-    const SCOPE = "openid email profile";
-
-    const googleAuthUrl =
-      `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${GOOGLE_CLIENT_ID}` +
-      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      `&response_type=code` +
-      `&scope=${encodeURIComponent(SCOPE)}` +
-      `&access_type=offline` +
-      `&prompt=consent`;
-
-    setTimeout(() => {
-      window.location.href = googleAuthUrl;
-    }, 500);
+    setError(
+      "Google signup is not configured yet. Please register using the form."
+    );
   };
 
-  // ---------------------------------------------------------
-  // Register API
-  // ---------------------------------------------------------
+  // =========================================================
+  // Registration API
+  // POST /api/v1/auth/register
+  // =========================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // -----------------------------
-    // Frontend validation
-    // -----------------------------
-    if (!formData.organizationName.trim()) {
-      return setError("Organization name is required.");
+    const organizationName = formData.organizationName.trim();
+    const firstName = formData.firstName.trim();
+    const lastName = formData.lastName.trim();
+    const email = formData.email.trim().toLowerCase();
+    const phoneNumber = formData.phoneNumber.trim();
+    const password = formData.password;
+
+    // STEP 1: Frontend Validation
+
+    if (!organizationName) {
+      setError("Organization name is required.");
+      return;
     }
 
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      return setError("First and last name are required.");
+    if (organizationName.length > 255) {
+      setError("Organization name cannot exceed 255 characters.");
+      return;
     }
 
-    if (!formData.email.trim()) {
-      return setError("Email is required.");
+    if (!firstName || !lastName) {
+      setError("First and last name are required.");
+      return;
     }
 
-    if (!formData.phoneNumber.trim()) {
-      return setError("Phone number is required.");
+    if (firstName.length > 100 || lastName.length > 100) {
+      setError("First and last name cannot exceed 100 characters.");
+      return;
     }
 
-    if (formData.password.length < 8) {
-      return setError("Password must be at least 8 characters.");
+    if (!email) {
+      setError("Email is required.");
+      return;
     }
+
+    if (phoneNumber.length === 0) {
+      setError("Phone number is required.");
+      return;
+    }
+
+    // Backend accepts spaces, dashes and parentheses,
+    // but stores digits only.
+    const cleanPhoneNumber = phoneNumber.replace(/[\s\-()]/g, "");
+
+    if (!/^\d{6,15}$/.test(cleanPhoneNumber)) {
+      setError("Phone number must contain 6 to 15 digits.");
+      return;
+    }
+
+    if (password.length < 8 || password.length > 72) {
+      setError("Password must contain 8 to 72 characters.");
+      return;
+    }
+
+    // STEP 2: Extract Country Code
+
+    const phoneCountryCode = formData.countryCode
+      .trim()
+      .split(/\s+/)
+      .pop();
+
+    if (!/^\+\d{1,4}$/.test(phoneCountryCode)) {
+      setError("Please select a valid country code.");
+      return;
+    }
+
+    // STEP 3: Referral Validation
+
+    const referralSource = formData.referral
+      ? referralMap[formData.referral]
+      : null;
+
+    if (formData.referral && !referralSource) {
+      setError("Please select a valid referral source.");
+      return;
+    }
+
+    // STEP 4: Exact Backend Payload
+
+    const payload = {
+      organization_name: organizationName,
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      phone_country_code: phoneCountryCode,
+      phone_number: cleanPhoneNumber,
+      password,
+      referral_source: referralSource,
+    };
 
     try {
       setIsLoading(true);
 
-      // -------------------------------------------------------
-      // Convert country code
-      // "IN +91" -> "+91"
-      // -------------------------------------------------------
-      const phoneCountryCode = formData.countryCode.includes("+")
-        ? `+${formData.countryCode.split("+")[1]}`
-        : formData.countryCode;
-
-      // -------------------------------------------------------
-      // Convert referral value
-      // -------------------------------------------------------
-      const referralMap = {
-        google: "google_search",
-        linkedin: "linkedin",
-        twitter: "twitter",
-        friend: "friend_referral",
-        event: "conference_event",
-        blog: "blog_article",
-        other: "other",
-      };
-
-      // -------------------------------------------------------
-      // API Payload
-      // -------------------------------------------------------
-      const payload = {
-        first_name: formData.firstName.trim(),
-        last_name: formData.lastName.trim(),
-        email: formData.email.trim(),
-        phone_country_code: phoneCountryCode,
-        phone_number: formData.phoneNumber.trim(),
-        password: formData.password,
-        organization_name: formData.organizationName.trim(),
-        referral_source: referralMap[formData.referral] || "other",
-      };
-
-      // -------------------------------------------------------
-      // API URL
-      // BASE_URL already contains /api/v1
-      // -------------------------------------------------------
-      const apiUrl = `${config.BASE_URL}/auth/register`;
-
-      console.log("Register API URL:", apiUrl);
-      console.log("Register API Payload:", payload);
-
-      // -------------------------------------------------------
-      // Axios POST request
-      // -------------------------------------------------------
-      const response = await axios.post(apiUrl, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
+      console.log("Registration payload:", {
+        ...payload,
+        password: "********",
       });
 
-      // -------------------------------------------------------
-      // API Response
-      // -------------------------------------------------------
-      const responseData = response.data;
+      // STEP 5: Call Registration API
 
-      console.log("Registration successful:", responseData);
+      const response = await axios.post(
+        `${config.BASE_URL}/auth/register`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      );
 
-      // -------------------------------------------------------
-      // Registration successful
-      // Registration does NOT authenticate the user.
-      // Redirect to Login so the user can sign in.
-      // -------------------------------------------------------
+      console.log("Registration successful:", response.data);
+
+      // STEP 6: Clear Previous Authentication
+
+      localStorage.removeItem("ravanai_auth");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("ravanai_user");
+
+      // STEP 7: Redirect to Login
+
       navigate("/login", {
         replace: true,
         state: {
           registered: true,
-          email: formData.email.trim(),
+          email,
         },
       });
     } catch (error) {
       console.error("Registration error:", error);
 
-      // -------------------------------------------------------
-      // Axios error response
-      // -------------------------------------------------------
-      const responseData = error?.response?.data;
-
-      let apiError =
-        responseData?.message ||
-        responseData?.error ||
-        responseData?.detail ||
-        error?.message ||
-        "Unable to connect to the server. Please try again.";
-
-      // -------------------------------------------------------
-      // FastAPI validation errors
-      // -------------------------------------------------------
-      if (Array.isArray(responseData?.detail)) {
-        const validationMessage = responseData.detail
-          .map((item) => item?.msg)
-          .filter(Boolean)
-          .join(", ");
-
-        apiError =
-          validationMessage ||
-          "Please check the entered information.";
-      }
-
-      setError(apiError);
+      setError(getApiError(error));
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ---------------------------------------------------------
+  // =========================================================
   // Animation Variants
-  // ---------------------------------------------------------
+  // =========================================================
   const containerVariants = {
     hidden: {
       opacity: 0,
@@ -749,24 +801,23 @@ const Register = () => {
     },
   };
 
-  // ---------------------------------------------------------
+  // =========================================================
   // Input Styling
-  // ---------------------------------------------------------
+  // =========================================================
   const inputClass =
     "h-[38px] w-full rounded-md border border-[#29292d] bg-[#101012] px-3 text-[13px] text-gray-100 outline-none placeholder:text-gray-500 transition focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400";
 
-  const labelClass = "mb-1 block text-[12px] font-medium text-gray-300";
+  const labelClass =
+    "mb-1 block text-[12px] font-medium text-gray-300";
 
-  // ---------------------------------------------------------
+  // =========================================================
   // UI
-  // ---------------------------------------------------------
+  // =========================================================
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#08080a] text-white">
       <div className="grid h-full grid-cols-1 lg:grid-cols-2">
-        {/* =====================================================
-            LEFT SECTION
-        ====================================================== */}
 
+        {/* LEFT SECTION */}
         <motion.section
           variants={leftSectionVariants}
           initial="hidden"
@@ -791,6 +842,7 @@ const Register = () => {
           <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(#ffffff_0.7px,transparent_0.7px)] [background-size:4px_4px]" />
 
           <div className="relative z-10 flex w-full flex-col">
+
             {/* Logo */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -807,7 +859,10 @@ const Register = () => {
                   e.currentTarget.style.display = "none";
                 }}
               />
-              <span className="text-2xl font-bold tracking-tight">Agni</span>
+
+              <span className="text-2xl font-bold tracking-tight">
+                Agni
+              </span>
             </motion.div>
 
             {/* Content */}
@@ -858,17 +913,16 @@ const Register = () => {
                   <h3 className="text-3xl font-bold text-gray-100">
                     {stat.value}
                   </h3>
-                  <p className="mt-1 text-sm text-gray-500">{stat.label}</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {stat.label}
+                  </p>
                 </motion.div>
               ))}
             </motion.div>
           </div>
         </motion.section>
 
-        {/* =====================================================
-            RIGHT SECTION
-        ====================================================== */}
-
+        {/* RIGHT SECTION */}
         <motion.section
           variants={rightSectionVariants}
           initial="hidden"
@@ -876,6 +930,7 @@ const Register = () => {
           className="flex h-full items-center justify-center overflow-hidden bg-[#08080a] px-6 py-6 sm:px-12 lg:px-16 xl:px-20"
         >
           <div className="w-full max-w-[420px]">
+
             {/* Mobile Logo */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -888,6 +943,7 @@ const Register = () => {
                 alt="Agni Logo"
                 className="h-9 w-9 rounded-full object-contain"
               />
+
               <span className="text-lg font-bold">Agni</span>
             </motion.div>
 
@@ -913,21 +969,16 @@ const Register = () => {
               </motion.p>
             </motion.div>
 
-            {/* =================================================
-                GOOGLE SIGNUP
-            ================================================== */}
-
+            {/* Google Signup */}
             <motion.button
               variants={itemVariants}
               initial="hidden"
               animate="visible"
               whileHover={{
-                scale: isGoogleLoading ? 1 : 1.02,
-                backgroundColor: isGoogleLoading ? "#101012" : "#18181b",
+                scale: 1.02,
+                backgroundColor: "#18181b",
               }}
-              whileTap={{
-                scale: isGoogleLoading ? 1 : 0.98,
-              }}
+              whileTap={{ scale: 0.98 }}
               type="button"
               disabled={isGoogleLoading || isLoading}
               onClick={handleGoogleSignup}
@@ -935,7 +986,10 @@ const Register = () => {
             >
               {isGoogleLoading ? (
                 <>
-                  <Loader2 size={14} className="animate-spin text-cyan-400" />
+                  <Loader2
+                    size={14}
+                    className="animate-spin text-cyan-400"
+                  />
                   <span>Redirecting...</span>
                 </>
               ) : (
@@ -984,9 +1038,21 @@ const Register = () => {
             <AnimatePresence>
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: "auto", marginBottom: 10 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  initial={{
+                    opacity: 0,
+                    height: 0,
+                    marginBottom: 0,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    height: "auto",
+                    marginBottom: 10,
+                  }}
+                  exit={{
+                    opacity: 0,
+                    height: 0,
+                    marginBottom: 0,
+                  }}
                   className="overflow-hidden rounded-md border border-red-500/30 bg-red-500/10 p-2 text-[12px] text-red-400"
                 >
                   {error}
@@ -994,10 +1060,7 @@ const Register = () => {
               )}
             </AnimatePresence>
 
-            {/* =================================================
-                FORM
-            ================================================== */}
-
+            {/* Registration Form */}
             <motion.form
               variants={containerVariants}
               initial="hidden"
@@ -1005,11 +1068,16 @@ const Register = () => {
               onSubmit={handleSubmit}
               className="space-y-2.5"
             >
+
               {/* Organization Name */}
               <motion.div variants={itemVariants}>
-                <label htmlFor="organizationName" className={labelClass}>
+                <label
+                  htmlFor="organizationName"
+                  className={labelClass}
+                >
                   Organization Name
                 </label>
+
                 <motion.input
                   whileFocus={{ scale: 1.01 }}
                   id="organizationName"
@@ -1019,6 +1087,7 @@ const Register = () => {
                   value={formData.organizationName}
                   onChange={handleChange}
                   required
+                  maxLength={255}
                   disabled={isLoading}
                   className={inputClass}
                 />
@@ -1030,9 +1099,13 @@ const Register = () => {
                 className="grid grid-cols-2 gap-2.5"
               >
                 <div>
-                  <label htmlFor="firstName" className={labelClass}>
+                  <label
+                    htmlFor="firstName"
+                    className={labelClass}
+                  >
                     First Name
                   </label>
+
                   <motion.input
                     whileFocus={{ scale: 1.01 }}
                     id="firstName"
@@ -1042,15 +1115,20 @@ const Register = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     required
+                    maxLength={100}
                     disabled={isLoading}
                     className={inputClass}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="lastName" className={labelClass}>
+                  <label
+                    htmlFor="lastName"
+                    className={labelClass}
+                  >
                     Last Name
                   </label>
+
                   <motion.input
                     whileFocus={{ scale: 1.01 }}
                     id="lastName"
@@ -1060,6 +1138,7 @@ const Register = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
+                    maxLength={100}
                     disabled={isLoading}
                     className={inputClass}
                   />
@@ -1075,6 +1154,7 @@ const Register = () => {
                   Email
                   <Info size={11} className="text-gray-500" />
                 </label>
+
                 <motion.input
                   whileFocus={{ scale: 1.01 }}
                   id="email"
@@ -1091,9 +1171,13 @@ const Register = () => {
 
               {/* Phone Number */}
               <motion.div variants={itemVariants}>
-                <label htmlFor="phoneNumber" className={labelClass}>
+                <label
+                  htmlFor="phoneNumber"
+                  className={labelClass}
+                >
                   Phone Number
                 </label>
+
                 <div className="flex gap-2">
                   <select
                     name="countryCode"
@@ -1111,6 +1195,7 @@ const Register = () => {
                     <option value="FR +33">FR +33</option>
                     <option value="JP +81">JP +81</option>
                   </select>
+
                   <motion.input
                     whileFocus={{ scale: 1.01 }}
                     id="phoneNumber"
@@ -1128,9 +1213,13 @@ const Register = () => {
 
               {/* Password */}
               <motion.div variants={itemVariants}>
-                <label htmlFor="password" className={labelClass}>
+                <label
+                  htmlFor="password"
+                  className={labelClass}
+                >
                   Password
                 </label>
+
                 <div className="relative">
                   <motion.input
                     whileFocus={{ scale: 1.01 }}
@@ -1142,9 +1231,11 @@ const Register = () => {
                     onChange={handleChange}
                     required
                     minLength={8}
+                    maxLength={72}
                     disabled={isLoading}
                     className={`${inputClass} pr-10`}
                   />
+
                   <motion.button
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -1158,16 +1249,24 @@ const Register = () => {
                     disabled={isLoading}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-gray-300 disabled:cursor-not-allowed"
                   >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showPassword ? (
+                      <EyeOff size={15} />
+                    ) : (
+                      <Eye size={15} />
+                    )}
                   </motion.button>
                 </div>
               </motion.div>
 
               {/* Referral */}
               <motion.div variants={itemVariants}>
-                <label htmlFor="referral" className={labelClass}>
+                <label
+                  htmlFor="referral"
+                  className={labelClass}
+                >
                   How did you hear about us?
                 </label>
+
                 <select
                   id="referral"
                   name="referral"
@@ -1178,24 +1277,21 @@ const Register = () => {
                 >
                   <option value="">Select an option</option>
                   <option value="google">Google Search</option>
+                  <option value="social">Social Media</option>
                   <option value="linkedin">LinkedIn</option>
-                  <option value="twitter">Twitter / X</option>
                   <option value="friend">Friend / Colleague</option>
-                  <option value="event">Conference / Event</option>
                   <option value="blog">Blog / Article</option>
+                  <option value="event">Event / Webinar</option>
                   <option value="other">Other</option>
                 </select>
               </motion.div>
 
-              {/* =================================================
-                  SUBMIT
-              ================================================== */}
-
+              {/* Submit */}
               <motion.button
                 variants={itemVariants}
                 whileHover={{
                   scale: isLoading ? 1 : 1.02,
-                  backgroundColor: isLoading ? "#25c7e8" : "#45d5f1",
+                  backgroundColor: "#45d5f1",
                 }}
                 whileTap={{
                   scale: isLoading ? 1 : 0.98,
@@ -1220,7 +1316,7 @@ const Register = () => {
               </motion.button>
             </motion.form>
 
-            {/* Sign in link */}
+            {/* Sign In Link */}
             <motion.p
               variants={itemVariants}
               initial="hidden"

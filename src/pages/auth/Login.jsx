@@ -414,16 +414,74 @@
 // export default Login;
 
 
-
 import React, { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import config from "../../config/Config";
+import {
+  normalizeRole,
+  getRoleHome,
+} from "../../utils/permissionModules";
 
 const DEMO_EMAIL = "admin@ravanai.com";
 const DEMO_PASSWORD = "Admin@12345";
+
+
+// =========================================================
+// Helper: Get role from backend user response
+// =========================================================
+const getUserRole = (user) => {
+  const rawRole = user?.role ?? user?.role_name ?? user?.user_role;
+
+  if (typeof rawRole === "string") {
+    return rawRole.trim().toLowerCase();
+  }
+
+  if (rawRole && typeof rawRole === "object") {
+    return String(
+      rawRole.name ||
+      rawRole.role ||
+      rawRole.role_name ||
+      ""
+    ).trim().toLowerCase();
+  }
+
+  return "";
+};
+
+// =========================================================
+// Helper: API error message
+// =========================================================
+const getApiError = (error) => {
+  const data = error?.response?.data;
+
+  if (Array.isArray(data?.detail)) {
+    return data.detail
+      .map((item) => item?.msg)
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (typeof data?.detail === "string") {
+    return data.detail;
+  }
+
+  if (typeof data?.message === "string") {
+    return data.message;
+  }
+
+  if (typeof data?.error === "string") {
+    return data.error;
+  }
+
+  if (error?.code === "ERR_NETWORK") {
+    return "Cannot connect to the server. Check that the backend is running and the API URL is correct.";
+  }
+
+  return error?.message || "Something went wrong. Please try again.";
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -438,6 +496,9 @@ const Login = () => {
     password: "",
   });
 
+  // =========================================================
+  // Input Handler
+  // =========================================================
   const handleChange = (e) => {
     setFormData((previous) => ({
       ...previous,
@@ -450,7 +511,6 @@ const Login = () => {
   // =========================================================
   // Demo Login
   // =========================================================
-
   const handleDemoLogin = () => {
     setFormData({
       email: DEMO_EMAIL,
@@ -461,183 +521,165 @@ const Login = () => {
   };
 
   // =========================================================
-  // Google OAuth Handler
+  // Google OAuth
+  // NOTE: Requires a real Google Client ID and backend OAuth
+  // callback implementation before it can work.
   // =========================================================
-
   const handleGoogleLogin = () => {
-    setIsGoogleLoading(true);
-    setError("");
-
-    const GOOGLE_CLIENT_ID =
-      "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
-
-    const REDIRECT_URI = `${window.location.origin}/auth/google/callback`;
-
-    const SCOPE = "openid email profile";
-
-    const googleAuthUrl =
-      `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${GOOGLE_CLIENT_ID}` +
-      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      `&response_type=code` +
-      `&scope=${encodeURIComponent(SCOPE)}` +
-      `&access_type=offline` +
-      `&prompt=consent`;
-
-    setTimeout(() => {
-      window.location.href = googleAuthUrl;
-    }, 500);
+    setError(
+      "Google login is not configured yet. Please use email and password."
+    );
   };
 
   // =========================================================
   // Login API
   // =========================================================
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    // -----------------------------
-    // Frontend validation
-    // -----------------------------
+  const email = formData.email.trim();
 
-    if (!formData.email.trim()) {
-      return setError("Email is required.");
-    }
+  if (!email) {
+    setError("Email is required.");
+    return;
+  }
 
-    if (!formData.password) {
-      return setError("Password is required.");
-    }
+  if (!formData.password) {
+    setError("Password is required.");
+    return;
+  }
 
-    try {
-      setIsLoading(true);
+  try {
+    setIsLoading(true);
 
-      // -----------------------------
-      // API Payload
-      // -----------------------------
+    // Clear previous authentication
+    localStorage.removeItem("ravanai_auth");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("ravanai_user");
 
-      const payload = {
-        email: formData.email.trim(),
+    // STEP 1: Login API
+    const loginResponse = await axios.post(
+      `${config.BASE_URL}/auth/login`,
+      {
+        email,
         password: formData.password,
-      };
-
-      // -----------------------------
-      // API URL
-      // -----------------------------
-
-      const apiUrl = `${config.BASE_URL}/auth/login`;
-
-      console.log("Login API URL:", apiUrl);
-      console.log("Login API Payload:", {
-        email: payload.email,
-        password: "********",
-      });
-
-      // -----------------------------
-      // Axios API Request
-      // -----------------------------
-
-      const response = await axios.post(apiUrl, payload, {
+      },
+      {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-      });
+      }
+    );
 
-      // -----------------------------
-      // Axios Response
-      // -----------------------------
+    const loginData = loginResponse.data || {};
 
-      const responseData = response.data || {};
+    const accessToken = loginData.access_token;
+    const refreshToken = loginData.refresh_token;
+    const tokenType = loginData.token_type || "bearer";
 
-      console.log("Login API Response:", responseData);
-
-      // -----------------------------
-      // Successful Login
-      // -----------------------------
-
-      const user = responseData?.user;
-      const accessToken = responseData?.access_token;
-
-      console.log("Login successful:", user);
-
-      // -----------------------------
-      // Save authentication data
-      // -----------------------------
-
-      localStorage.setItem(
-        "ravanai_auth",
-        JSON.stringify({
-          isAuthenticated: true,
-          email: user?.email || formData.email,
-          organization: user?.organization_name || "",
-          user: user || null,
-          token: accessToken || null,
-          token_type: responseData?.token_type || "bearer",
-        })
+    if (!accessToken) {
+      throw new Error(
+        "Access token was not returned by the backend."
       );
-
-      // -----------------------------
-      // Save token separately
-      // -----------------------------
-
-      if (accessToken) {
-        localStorage.setItem("access_token", accessToken);
-      }
-
-      // -----------------------------
-      // Save user separately
-      // -----------------------------
-
-      if (user) {
-        localStorage.setItem("ravanai_user", JSON.stringify(user));
-      }
-
-      // -----------------------------
-      // Redirect to Dashboard
-      // -----------------------------
-
-      navigate("/dashboard", { replace: true });
-    } catch (error) {
-      console.error("Login error:", error);
-
-      // -----------------------------
-      // Axios Error Response
-      // -----------------------------
-
-      const responseData = error?.response?.data;
-
-      let apiError =
-        responseData?.message ||
-        responseData?.error ||
-        responseData?.detail ||
-        error?.message ||
-        "Unable to connect to the server. Please try again.";
-
-      // -----------------------------
-      // FastAPI validation errors
-      // -----------------------------
-
-      if (Array.isArray(responseData?.detail)) {
-        const validationMessage = responseData.detail
-          .map((item) => item?.msg)
-          .filter(Boolean)
-          .join(", ");
-
-        apiError =
-          validationMessage || "Please check your login details.";
-      }
-
-      setError(apiError);
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    // STEP 2: Fetch authenticated user
+    const meResponse = await axios.get(
+      `${config.BASE_URL}/auth/me`,
+      {
+        headers: {
+          Authorization: `${tokenType} ${accessToken}`,
+          Accept: "application/json",
+        },
+      }
+    );
+
+    const user = meResponse.data?.user || meResponse.data;
+
+    if (!user || typeof user !== "object") {
+      throw new Error(
+        "Unable to retrieve user information from the backend."
+      );
+    }
+
+    // STEP 3: Normalize and validate backend role
+    const role = normalizeRole(user.role);
+
+    if (!role) {
+      throw new Error(
+        `Unsupported account role: ${user.role || "not provided"}. Please contact the administrator.`
+      );
+    }
+
+    // STEP 4: Check active account
+    if (user.is_active === false) {
+      throw new Error(
+        "Your account is inactive. Please contact the administrator."
+      );
+    }
+
+    // STEP 5: Prepare authentication data
+    const authData = {
+      isAuthenticated: true,
+      email: user.email || email,
+      organization: user.organization_name || "",
+      user,
+      role,
+      token: accessToken,
+      refreshToken: refreshToken || null,
+      token_type: tokenType,
+    };
+
+    // STEP 6: Store authentication
+    localStorage.setItem(
+      "ravanai_auth",
+      JSON.stringify(authData)
+    );
+
+    localStorage.setItem("access_token", accessToken);
+
+    localStorage.setItem(
+      "ravanai_user",
+      JSON.stringify(user)
+    );
+
+    if (refreshToken) {
+      localStorage.setItem("refresh_token", refreshToken);
+    }
+
+    console.log("Login successful:", {
+      email: authData.email,
+      role: authData.role,
+      dashboard: getRoleHome(role),
+      user,
+    });
+
+    // STEP 7: Redirect according to role
+    navigate(getRoleHome(role), { replace: true });
+
+  } catch (error) {
+    console.error("Login error:", error);
+
+    // Clear incomplete authentication
+    localStorage.removeItem("ravanai_auth");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("ravanai_user");
+
+    setError(getApiError(error));
+
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // =========================================================
   // Animation Variants
   // =========================================================
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -666,7 +708,10 @@ const Login = () => {
     visible: {
       opacity: 1,
       x: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+      },
     },
   };
 
@@ -675,30 +720,30 @@ const Login = () => {
     visible: {
       opacity: 1,
       x: 0,
-      transition: { duration: 0.8, ease: "easeOut" },
+      transition: {
+        duration: 0.8,
+        ease: "easeOut",
+      },
     },
   };
 
   // =========================================================
   // Input Styles
   // =========================================================
-
   const inputClass =
     "h-[38px] w-full rounded-md border border-[#29292d] bg-[#101012] px-3 text-[13px] text-gray-100 outline-none placeholder:text-gray-500 transition focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400";
 
-  const labelClass = "mb-1 block text-[12px] font-medium text-gray-300";
+  const labelClass =
+    "mb-1 block text-[12px] font-medium text-gray-300";
 
   // =========================================================
   // UI
   // =========================================================
-
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#08080a] text-white">
       <div className="grid h-full grid-cols-1 lg:grid-cols-2">
-        {/* =====================================================
-            LEFT SECTION
-        ====================================================== */}
 
+        {/* LEFT SECTION */}
         <motion.section
           variants={leftSectionVariants}
           initial="hidden"
@@ -723,6 +768,7 @@ const Login = () => {
           <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(#ffffff_0.7px,transparent_0.7px)] [background-size:4px_4px]" />
 
           <div className="relative z-10 flex w-full flex-col">
+
             {/* Logo */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -739,12 +785,13 @@ const Login = () => {
                   e.currentTarget.style.display = "none";
                 }}
               />
+
               <span className="text-2xl font-bold tracking-tight">
                 JeevaAI
               </span>
             </motion.div>
 
-            {/* Content */}
+            {/* Main Content */}
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -804,10 +851,7 @@ const Login = () => {
           </div>
         </motion.section>
 
-        {/* =====================================================
-            RIGHT SECTION
-        ====================================================== */}
-
+        {/* RIGHT SECTION */}
         <motion.section
           variants={rightSectionVariants}
           initial="hidden"
@@ -815,6 +859,7 @@ const Login = () => {
           className="flex h-full items-center justify-center overflow-hidden bg-[#08080a] px-6 py-6 sm:px-12 lg:px-16 xl:px-20"
         >
           <div className="w-full max-w-[420px]">
+
             {/* Mobile Logo */}
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -852,10 +897,7 @@ const Login = () => {
               </motion.p>
             </motion.div>
 
-            {/* =================================================
-                DEMO CREDENTIALS
-            ================================================== */}
-
+            {/* Demo Credentials */}
             <motion.div
               variants={itemVariants}
               initial="hidden"
@@ -890,21 +932,16 @@ const Login = () => {
               </p>
             </motion.div>
 
-            {/* =================================================
-                GOOGLE BUTTON
-            ================================================== */}
-
+            {/* Google Login */}
             <motion.button
               variants={itemVariants}
               initial="hidden"
               animate="visible"
               whileHover={{
-                scale: isGoogleLoading ? 1 : 1.02,
-                backgroundColor: isGoogleLoading ? "#101012" : "#18181b",
+                scale: 1.02,
+                backgroundColor: "#18181b",
               }}
-              whileTap={{
-                scale: isGoogleLoading ? 1 : 0.98,
-              }}
+              whileTap={{ scale: 0.98 }}
               type="button"
               disabled={isGoogleLoading || isLoading}
               onClick={handleGoogleLogin}
@@ -961,9 +998,21 @@ const Login = () => {
             <AnimatePresence>
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: "auto", marginBottom: 10 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  initial={{
+                    opacity: 0,
+                    height: 0,
+                    marginBottom: 0,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    height: "auto",
+                    marginBottom: 10,
+                  }}
+                  exit={{
+                    opacity: 0,
+                    height: 0,
+                    marginBottom: 0,
+                  }}
                   className="overflow-hidden rounded-md border border-red-500/30 bg-red-500/10 p-2 text-[12px] text-red-400"
                 >
                   {error}
@@ -971,10 +1020,7 @@ const Login = () => {
               )}
             </AnimatePresence>
 
-            {/* =================================================
-                LOGIN FORM
-            ================================================== */}
-
+            {/* Login Form */}
             <motion.form
               variants={containerVariants}
               initial="hidden"
@@ -987,6 +1033,7 @@ const Login = () => {
                 <label htmlFor="email" className={labelClass}>
                   Email
                 </label>
+
                 <motion.input
                   whileFocus={{ scale: 1.01 }}
                   id="email"
@@ -1012,9 +1059,9 @@ const Login = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     type="button"
-                    onClick={() =>
-                      console.log("Forgot password clicked")
-                    }
+                    onClick={() => {
+                      setError("Forgot password is not configured yet.");
+                    }}
                     className="text-[12px] text-gray-400 transition hover:text-cyan-400"
                   >
                     Forgot?
@@ -1048,7 +1095,11 @@ const Login = () => {
                     disabled={isLoading}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-gray-300 disabled:cursor-not-allowed"
                   >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    {showPassword ? (
+                      <EyeOff size={15} />
+                    ) : (
+                      <Eye size={15} />
+                    )}
                   </motion.button>
                 </div>
               </motion.div>
@@ -1058,7 +1109,7 @@ const Login = () => {
                 variants={itemVariants}
                 whileHover={{
                   scale: isLoading ? 1 : 1.02,
-                  backgroundColor: isLoading ? "#25c7e8" : "#45d5f1",
+                  backgroundColor: "#45d5f1",
                 }}
                 whileTap={{
                   scale: isLoading ? 1 : 0.98,
